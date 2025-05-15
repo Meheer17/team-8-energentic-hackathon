@@ -46,7 +46,7 @@ cp config/secrets.env.example config/secrets.env
 python main.py
 ```
 
-## 🎥 Pdf Link
+## Pdf Link
 
 [PDF Link](https://github.com/Meheer17/team-8-energentic-hackathon/blob/c78e59b946cff42615dfb7aee198b7a72affc75d/Sunshare_.pdf)
 
