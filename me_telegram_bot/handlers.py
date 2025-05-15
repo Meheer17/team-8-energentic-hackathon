@@ -83,7 +83,20 @@ async def handle_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "Here are the commands you can use:\n\n"
         "• /start - Start or restart the bot\n"
         "• /help - Show this help message\n\n"
-        "You can also use the menu buttons to navigate and access different features."
+        "*Solar Onboarding:*\n"
+        "• Send a photo of your roof directly to analyze solar potential\n"
+        "• Provide your address and electricity bill information when prompted\n"
+        "• Use 'Search Subsidies' to find active incentives in your area\n"
+        "• Use 'Find Installers' to connect with solar installation providers\n"
+        "• Use 'Buy Solar Panels' to order solar equipment\n"
+        "• Use 'Calculate ROI' to see the return on investment\n\n"
+        "*Energy Services (for existing solar users):*\n"
+        "• Sell excess energy to the grid\n"
+        "• Share energy with neighbors through P2P trading\n"
+        "• Track your production and consumption\n"
+        "• Set up auto-trading for optimal energy management\n"
+        "• Tokenize your renewable energy as NFTs\n\n"
+        "Use the menu buttons to navigate through these features."
     )
 
     await update.message.reply_markdown(help_text)
