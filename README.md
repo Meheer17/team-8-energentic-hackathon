@@ -48,7 +48,7 @@ python main.py
 
 ## 🎥 Demo Video Link
 
-[Add your demo video link here]
+[Video Link](https://github.com/Meheer17/team-8-energentic-hackathon/blob/c78e59b946cff42615dfb7aee198b7a72affc75d/Sunshare_.pdf)
 
 ## 📸 Screenshots / Visuals
 
