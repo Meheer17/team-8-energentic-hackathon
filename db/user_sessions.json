@@ -1,0 +1,100 @@
+{
+  "5942147376": {
+    "state": "solar_onboarding_confirm",
+    "last_updated": "2025-05-14T21:42:32.224238",
+    "address": "Usa",
+    "electricity_consumption": 50.0
+  },
+  "945846353": {
+    "state": "solar_onboarding_options",
+    "last_updated": "2025-05-15T16:00:12.282281",
+    "address": "8r4",
+    "electricity_consumption": 373.0,
+    "nfts": [
+      {
+        "token_id": "nft-9458-grid-1747287572",
+        "status": "created",
+        "value_usd": 15.0,
+        "blockchain": "Polygon",
+        "contract_address": "0xnft-9458-grid-1747287572abcdef1234567890abcdef12345678",
+        "creation_time": "2025-05-15T11:09:32.285319",
+        "marketplace": "FlexChain",
+        "marketplace_url": "https://flexchain.io/token/nft-9458-grid-1747287572",
+        "type": "grid_flexibility"
+      }
+    ],
+    "subsidies": [
+      {
+        "id": "458",
+        "provider_id": "323",
+        "provider_name": "Pacific Gas and Electric Company (PG&E)",
+        "provider_desc": "Demand response and smart energy programs",
+        "name": "Home Battery Discharge Program",
+        "description": "Discharge home battery during peak demand hours",
+        "long_description": "A program that enables residential users with battery storage to discharge energy back to the grid during peak demand events. Participants receive compensation for every kWh discharged.",
+        "image": "https://static.vecteezy.com/system/resources/previews/004/820/773/non_2x/upside-down-arrow-with-electrical-plug-and-lightning-free-vector.jpg",
+        "price": "0",
+        "currency": "USD",
+        "tags": {
+          "program_details": {
+            "program_type": "Battery Discharge"
+          },
+          "device_type": {
+            "required_device": "Home Battery"
+          },
+          "incentive_details": {
+            "type": "Performance-Based Incentive"
+          }
+        }
+      },
+      {
+        "id": "459",
+        "provider_id": "323",
+        "provider_name": "Pacific Gas and Electric Company (PG&E)",
+        "provider_desc": "Demand response and smart energy programs",
+        "name": "Time-of-Use Optimization Plan",
+        "description": "Save money by shifting usage to off-peak hours",
+        "long_description": "Participants reduce energy bills by aligning usage with low-cost off-peak time windows. Automated energy usage analytics help optimize schedules.",
+        "image": "https://static.vecteezy.com/system/resources/previews/004/820/773/non_2x/upside-down-arrow-with-electrical-plug-and-lightning-free-vector.jpg",
+        "price": "0",
+        "currency": "USD",
+        "tags": {
+          "program_details": {
+            "program_type": "Time-of-Use Plan"
+          },
+          "device_type": {
+            "required_device": "None"
+          },
+          "incentive_details": {
+            "type": "Tariff Discount"
+          }
+        }
+      },
+      {
+        "id": "460",
+        "provider_id": "323",
+        "provider_name": "Pacific Gas and Electric Company (PG&E)",
+        "provider_desc": "Demand response and smart energy programs",
+        "name": "EV Smart Charging Response",
+        "description": "Delay or pause EV charging when the grid is strained",
+        "long_description": "By allowing PG&E to pause or slow EV charging during high grid load periods, users earn rebates and contribute to cleaner grid operations.",
+        "image": "https://static.vecteezy.com/system/resources/previews/004/820/773/non_2x/upside-down-arrow-with-electrical-plug-and-lightning-free-vector.jpg",
+        "price": "0",
+        "currency": "USD",
+        "tags": {
+          "program_details": {
+            "program_type": "EV Smart Charging"
+          },
+          "device_type": {
+            "required_device": "Smart EV Charger"
+          },
+          "incentive_details": {
+            "type": "Rebate + Bill Credit"
+          }
+        }
+      }
+    ],
+    "selected_provider": "323",
+    "selected_subsidy": "458"
+  }
+}
