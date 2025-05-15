@@ -54,11 +54,23 @@ def setup_telegram_bot(token):
     return application
 
 async def error_handler(update, context):
-    """Log errors caused by updates."""
-    logger.error(f"Update {update} caused error: {context.error}")
-    # Notify user about the error
-    if update:
-        if update.message:
-            await update.message.reply_text("Sorry, something went wrong. Please try again later.")
-        elif update.callback_query:
-            await update.callback_query.message.reply_text("Sorry, something went wrong. Please try again later.")
+        """Log errors caused by updates."""
+        logger.error(f"Update {update} caused error: {context.error}")
+        
+        # Notify user about the error based on update type
+        if update:
+            if update.message:
+                # If error occurred in a regular message
+                await update.message.reply_text("Sorry, something went wrong. Please try again later.")
+            elif update.callback_query:
+                # If error occurred in a callback query
+                await update.callback_query.answer("Sorry, something went wrong.")
+                try:
+                    await update.callback_query.edit_message_text(
+                        "Sorry, something went wrong. Please use /start to restart.",
+                        reply_markup=InlineKeyboardMarkup([[
+                            InlineKeyboardButton("Start Over", callback_data="start_over")
+                        ]])
+                    )
+                except Exception:
+                    pass  # If editing fails, we already showed an alert

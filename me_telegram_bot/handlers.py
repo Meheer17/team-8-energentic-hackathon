@@ -1,7 +1,7 @@
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-
+from datetime import datetime, date, timedelta  # Make sure timedelta is included
 from me_telegram_bot.keyboards import (
     get_main_menu_keyboard,
     get_solar_onboarding_keyboard,
@@ -219,39 +219,39 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
     """Handle callbacks related to solar onboarding process."""
     query = update.callback_query
     await query.answer()  # Answer the callback query to remove the loading state
-    
+
     user_id = str(update.effective_user.id)
     callback_data = query.data.split(":")
-    
+
     if len(callback_data) < 2:
         await handle_unknown_callback(update, context)
         return
-    
+
     action = callback_data[1]
-    
+
     if action == "start":
         # Start the solar onboarding flow
         update_user_session(user_id, {"state": "solar_onboarding_address"})
-        
+
         await query.edit_message_text(
             "Great choice! Let's start your solar onboarding process. 🌞\n\n"
             "First, I'll need your address to check solar potential and available subsidies in your area. "
             "Please provide your complete address."
         )
-    
+
     elif action == "confirm":
         # User confirmed their information, now we'll show them options
         user_session = get_user_session(user_id)
         address = user_session.get("address", "Unknown")
         consumption = user_session.get("electricity_consumption", "Unknown")
-        
+
         # Update state to indicate we're moving to options
         update_user_session(user_id, {"state": "solar_onboarding_options"})
-        
+
         # Start searching for subsidies and installers in the background
         subsidies = solar_agent.search_subsidies(user_id)
         installers = solar_agent.search_installers(user_id)
-        
+
         # Show options to the user
         options_keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("🔍 Search Subsidies", callback_data="solar_onboarding:search_subsidies")],
@@ -260,7 +260,7 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             [InlineKeyboardButton("🧮 Calculate ROI", callback_data="solar_onboarding:calc_roi")],
             [InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="solar_onboarding:back_to_main")]
         ])
-        
+
         await query.edit_message_text(
             f"Thanks for the information! I've recorded:\n\n"
             f"📍 *Address*: {address}\n"
@@ -269,16 +269,15 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             parse_mode="Markdown",
             reply_markup=options_keyboard
         )
-    
+
     elif action == "search_subsidies":
         # Show available subsidies
         user_session = get_user_session(user_id)
-        subsidies = []#user_session.get("subsidies", [])
-        
+        subsidies = []#user_session.get("subsidies", [])        
         # If subsidies weren't loaded yet, load them now
         if not subsidies:
             subsidies = solar_agent.search_subsidies(user_id)
-        
+
         if not subsidies:
             await query.edit_message_text(
                 "I couldn't find any subsidies at the moment. Please try again later.",
@@ -287,7 +286,7 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                 ])
             )
             return
-        
+
         # Format the subsidies for display
         subsidies_text = "Here are the available subsidies for your area:\n\n"
         subsidy_buttons = []
@@ -311,7 +310,7 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                     callback_data=f"solar_onboarding:apply_subsidy:{subsidy.get('provider_id')}:{subsidy.get('id')}:{subsidy.get("fulfillment_id", "615")}"
                 )
             ])
-        
+
         # Add a back button
         subsidy_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:confirm")])
         subsidies_keyboard = InlineKeyboardMarkup(subsidy_buttons)
@@ -321,16 +320,16 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             parse_mode="Markdown",
             reply_markup=subsidies_keyboard
         )
-    
+
     elif action == "find_installers":
         # Show available installers
         user_session = get_user_session(user_id)
         installers = user_session.get("installers", [])
-        
+
         # If installers weren't loaded yet, load them now
         if not installers:
             installers = solar_agent.search_installers(user_id)
-        
+
         if not installers:
             await query.edit_message_text(
                 "I couldn't find any installers at the moment. Please try again later.",
@@ -339,18 +338,18 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                 ])
             )
             return
-        
+
         # Format the installers for display
         installers_text = "Here are the recommended solar installers in your area:\n\n"
-        
+
         installer_buttons = []
         for i, installer in enumerate(installers[:3]):  # Show top 3 installers
             name = installer.get("name", "Unknown Installer")
             short_desc = installer.get("short_desc", "")
-            
+
             installers_text += f"*{i+1}. {name}*\n"
             installers_text += f"Description: {short_desc}\n"
-            
+
             # Show services if available
             services = installer.get("services", [])
             if services:
@@ -360,32 +359,32 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                     service_price = service.get("price", "0")
                     service_currency = service.get("currency", "USD")
                     installers_text += f"- {service_name}: {service_price} {service_currency}\n"
-            
+
             installers_text += "\n"
-            
+
             # Add a button for each installer with their first service
             if services:
                 installer_buttons.append([
                     InlineKeyboardButton(
-                        f"Select {name}", 
+                        f"Select {name}",
                         callback_data=f"solar_onboarding:select_installer:{installer.get('id')}:{services[0].get('id')}"
                     )
                 ])
-        
+
         # Add a back button
         installer_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:confirm")])
         installers_keyboard = InlineKeyboardMarkup(installer_buttons)
-        
+
         await query.edit_message_text(
             installers_text,
             parse_mode="Markdown",
             reply_markup=installers_keyboard
         )
-    
+
     elif action == "calc_roi":
         # Calculate and show ROI
         roi_data = solar_agent.estimate_roi(user_id)
-        
+
         roi_text = (
             "📊 *Solar Investment Analysis*\n\n"
             f"System Size: {roi_data['estimated_system_size_kw']} kW\n"
@@ -396,18 +395,18 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             f"20-Year ROI: {roi_data['estimated_roi_20_year_percent']}%\n\n"
             "Ready to take the next step toward energy independence?"
         )
-        
+
         roi_keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("🏪 Find Installers", callback_data="solar_onboarding:find_installers")],
             [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:confirm")]
         ])
-        
+
         await query.edit_message_text(
             roi_text,
             parse_mode="Markdown",
             reply_markup=roi_keyboard
         )
-    
+
     elif action == "apply_subsidy" and len(callback_data) >= 4:
         # User is applying for a specific subsidy
         provider_id = callback_data[2]
@@ -419,7 +418,7 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             "selected_provider": provider_id,
             "selected_subsidy": subsidy_id
         })
-        
+
         # Show confirmation to the user
         await query.edit_message_text(
             "Great! Let's apply for this subsidy. I'll need to collect some information.\n\n"
@@ -429,17 +428,17 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                 [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:search_subsidies")]
             ])
         )
-    
+
     elif action == "confirm_subsidy" and len(callback_data) >= 4:
         # User confirmed subsidy application
         provider_id = callback_data[2]
         subsidy_id = callback_data[3]
         fulfillment_id = callback_data[4]
-        
+       
         # Get user info
         user_session = get_user_session(user_id)
         user_name = update.effective_user.first_name
-        
+
         # Default contact info (in real app, would collect this)
         customer_info = {
             "person": {
@@ -450,17 +449,17 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                 "email": f"{user_name}@example.com"  # Example email
             }
         }
-        
+
         # Submit the subsidy application using Beckn
+
         order_confirmation = solar_agent.confirm_order(user_id, provider_id, subsidy_id, fulfillment_id, customer_info)
-        
         if order_confirmation and "id" in order_confirmation:
             # Store the order ID
             update_user_session(user_id, {
                 "state": "solar_onboarding_subsidy_confirmed",
                 "subsidy_order_id": order_confirmation["id"]
             })
-            
+
             await query.edit_message_text(
                 "✅ *Subsidy Application Submitted!*\n\n"
                 f"Order ID: `{order_confirmation['id']}`\n\n"
@@ -481,34 +480,34 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                     [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:search_subsidies")]
                 ])
             )
-    
+
     elif action == "select_installer" and len(callback_data) >= 4:
         # User is selecting a specific installer and service
         provider_id = callback_data[2]
         service_id = callback_data[3]
-        
+
         # Update state
         update_user_session(user_id, {
             "state": "solar_onboarding_selecting_installer",
             "selected_installer": provider_id,
             "selected_service": service_id
         })
-        
+
         # Select the service using Beckn
         selection = solar_agent.select_service(user_id, provider_id, service_id)
-        
+
         if selection:
             # Show service details and confirmation
             service_name = selection.get("item", {}).get("descriptor", {}).get("name", "Solar Installation Service")
             provider_name = selection.get("provider", {}).get("descriptor", {}).get("name", "Solar Installer")
-            
+
             # Get price from quote
             price = "N/A"
             currency = "USD"
             if "quote" in selection and "price" in selection["quote"]:
                 price = selection["quote"]["price"].get("value", "N/A")
                 currency = selection["quote"]["price"].get("currency", "USD")
-            
+
             await query.edit_message_text(
                 f"You've selected *{service_name}* from *{provider_name}*.\n\n"
                 f"Price: {price} {currency}\n\n"
@@ -523,14 +522,13 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             # User is selecting a specific solar panel product
             provider_id = callback_data[2]
             product_id = callback_data[3]
-            
+
             # Update state
             update_user_session(user_id, {
                 "state": "solar_onboarding_selecting_product",
                 "selected_product_provider": provider_id,
                 "selected_product": product_id
-            })
-            
+            })  
             # Call the Beckn select API
             select_response = solar_agent.select_solar_product(user_id, provider_id, product_id)
             
@@ -559,7 +557,6 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                         [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:find_products")]
                     ])
                 )
-        
         elif action == "init_product" and len(callback_data) >= 4:
             # Initialize the order for the selected product
             provider_id = callback_data[2]
@@ -596,12 +593,10 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             # User is providing delivery info for product order
             provider_id = callback_data[2]
             product_id = callback_data[3]
-            
-            # Get user info
             user_name = update.effective_user.first_name
             user_session = get_user_session(user_id)
             address = user_session.get("address", "Default Address")
-            
+
             customer_info = {
                 "person": {
                     "name": user_name
@@ -654,24 +649,21 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                     [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:find_installers")]
                 ])
             )
-    
+
     elif action == "init_order" and len(callback_data) >= 4:
         # Initialize the order for the selected installer service
         provider_id = callback_data[2]
         service_id = callback_data[3]
-
-        print("-------_---_---_---_---_---_---_---_---_---_Initializing order for provider:", provider_id, "and service:", service_id)
-        
         # Initialize the order using Beckn
         order_init = solar_agent.initialize_order(user_id, provider_id, service_id)
-        
+
         if order_init:
             # Update state
             update_user_session(user_id, {
                 "state": "solar_onboarding_init_order",
                 "order_init": order_init
             })
-            
+
             # Show order summary and confirmation
             await query.edit_message_text(
                 "Your installation consultation has been initialized!\n\n"
@@ -688,16 +680,16 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                     [InlineKeyboardButton("⬅️ Back", callback_data=f"solar_onboarding:select_installer:{provider_id}:{service_id}")]
                 ])
             )
-    
+
     elif action == "provide_contact" and len(callback_data) >= 4:
         # User is providing contact info for installation order
         provider_id = callback_data[2]
         service_id = callback_data[3]
-        
+
         # In a real app, we would collect this info via form
         # Here we'll use example data for demonstration
         user_name = update.effective_user.first_name
-        
+
         customer_info = {
             "person": {
                 "name": user_name
@@ -707,25 +699,25 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                 "email": f"{user_name}@example.com"  # Example email
             }
         }
-        
+
         # Update state with contact info
         update_user_session(user_id, {
             "state": "solar_onboarding_confirming_order",
             "contact_info": customer_info
         })
-        
+
         # Confirm the order using Beckn
         order_confirmation = solar_agent.confirm_order(
             user_id, provider_id, service_id, "617", customer_info
         )
-        
+
         if order_confirmation and "id" in order_confirmation:
             # Store the order ID
             update_user_session(user_id, {
                 "state": "solar_onboarding_order_confirmed",
                 "installation_order_id": order_confirmation["id"]
             })
-            
+
             await query.edit_message_text(
                 "✅ *Installation Consultation Confirmed!*\n\n"
                 f"Order ID: `{order_confirmation['id']}`\n\n"
@@ -745,7 +737,7 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                     [InlineKeyboardButton("⬅️ Back", callback_data=f"solar_onboarding:init_order:{provider_id}:{service_id}")]
                 ])
             )
-    
+
     elif action == "find_products":
         # Search for solar panel products
         user_session = get_user_session(user_id)
@@ -786,7 +778,6 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             
             # Store the processed products in the user session
             update_user_session(user_id, {"products": products})
-        
         if not products:
             await query.edit_message_text(
                 "I couldn't find any solar products at the moment. Please try again later.",
@@ -795,7 +786,7 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                 ])
             )
             return
-        
+
         # Format the products for display
         products_text = "Here are recommended solar panel systems for your needs:\n\n"
         product_buttons = []
@@ -804,33 +795,34 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             description = product.get("description", "")
             price = product.get("price", "0")
             currency = product.get("currency", "USD")
-            
+
             products_text += f"*{i+1}. {name}*\n"
             products_text += f"Description: {description}\n"
             products_text += f"Price: {price} {currency}\n\n"
-            
+
             # Add a button for each product
             product_buttons.append([
                 InlineKeyboardButton(
+
                     f"Select {name}", 
                     callback_data=f"solar_onboarding:select_product"
                 )
             ])
-        
+
         # Add a back button
         product_buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:confirm")])
         products_keyboard = InlineKeyboardMarkup(product_buttons)
-        
+
         await query.edit_message_text(
             products_text,
             parse_mode="Markdown",
             reply_markup=products_keyboard
         )
-    
+
     elif action == "view_summary":
         # Generate and show a summary of the user's solar journey
         summary = solar_agent.generate_summary(user_id)
-        
+
         await query.edit_message_text(
             summary,
             parse_mode="Markdown",
@@ -838,11 +830,24 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                 [InlineKeyboardButton("🏠 Return to Main Menu", callback_data="solar_onboarding:back_to_main")]
             ])
         )
-    
+
     elif action == "back_to_main":
-        # Return to the main menu
-        await handle_start(update, context)
-    
+            # Return to the main menu - don't use handle_start as it's designed for direct messages
+            welcome_message = (
+                f"👋 Hi {update.effective_user.first_name}! Welcome to the DEG Energy Agent.\n\n"
+                f"I can help you with:\n\n"
+                f"1️⃣ *Onboard for Rooftop Solar*: Find subsidies, check eligibility, connect with installers\n\n"
+                f"2️⃣ *Use My Installed System*: Sell excess energy, participate in demand response, earn with NFTs\n\n"
+                f"What would you like to do today?"
+            )
+        
+            # Send message with main menu keyboard by editing the current message
+            await query.edit_message_text(
+                welcome_message,
+                reply_markup=get_main_menu_keyboard(),
+                parse_mode="Markdown"
+            )
+
     else:
         # Handle unknown action
         await handle_unknown_callback(update, context)
@@ -866,22 +871,123 @@ async def handle_energy_services_callback(update: Update, context: ContextTypes.
         update_user_session(user_id, {"state": "energy_services_menu"})
 
         energy_services_keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("☀️⚡ Sell My Excess Solar", callback_data="energy_services:sell_energy")],
+            [InlineKeyboardButton("💸 Sell Energy", callback_data="energy_services:sell_energy")],
+            [InlineKeyboardButton("🛒 Buy Energy", callback_data="energy_services:buy_energy")],
             [InlineKeyboardButton("📊 Track My Production", callback_data="energy_services:track_production")],
             [InlineKeyboardButton("💹 View Energy Stats", callback_data="energy_services:view_stats")],
             [InlineKeyboardButton("🎟️ Tokenize as NFTs", callback_data="energy_services:tokenize_energy")],
-            [InlineKeyboardButton("🤖 Enable Auto-Trading", callback_data="energy_services:auto_trading")],
+            [InlineKeyboardButton("🤖 Auto-Trading Settings", callback_data="energy_services:auto_trading")],
             [InlineKeyboardButton("🔌 P2P Energy Sharing", callback_data="energy_services:p2p_sharing")],
             [InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="solar_onboarding:back_to_main")]
         ])
 
         await query.edit_message_text(
             "Welcome to Energy Services! 🌟\n\n"
-            "As a prosumer with installed solar panels, you can now participate in the energy market. "
+            "As a prosumer with installed solar panels, you can participate in the energy market. "
             "What would you like to do today?",
             reply_markup=energy_services_keyboard
         )
 
+    elif action == "view_transactions":
+        # Show transaction history
+        update_user_session(user_id, {"state": "energy_services_transactions"})
+
+        # Get transaction history from user state
+        user_session = get_user_session(user_id)
+        transactions = user_session.get('transactions', [])
+
+        if not transactions:
+            await query.edit_message_text(
+                "You haven't made any energy transactions yet.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="energy_services:start")]])
+            )
+            return
+
+        # Sort transactions by timestamp (newest first)
+        transactions.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+
+        # Format the transactions for display
+        transactions_text = "📜 *Your Energy Transactions*\n\n"
+
+        for i, tx in enumerate(transactions[:5]):  # Show only the 5 most recent transactions
+            tx_type = tx.get('transaction_type', '').replace('_', ' ').title()
+            amount = tx.get('amount_kwh', 0)
+            price = tx.get('price_per_kwh', 0)
+            total = tx.get('total_amount_usd', 0)
+            timestamp = tx.get('timestamp', '').split('T')[0]  # Just show the date part
+
+            transactions_text += (
+                f"{i+1}. **{tx_type}**\n"
+                f"   Amount: {amount} kWh\n"
+                f"   Price: ${price}/kWh\n"
+                f"   {'Total earning' if 'sell' in tx_type.lower() or 'shar' in tx_type.lower() else 'Total cost'}: ${total}\n"
+                f"   Date: {timestamp}\n\n"
+            )
+
+        # Add pagination if there are more transactions
+        if len(transactions) > 5:
+            transactions_text += f"Showing 5 of {len(transactions)} transactions."
+
+        await query.edit_message_text(
+            transactions_text,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📊 View Stats", callback_data="energy_services:view_stats")],
+                [InlineKeyboardButton("⬅️ Back", callback_data="energy_services:start")]
+            ]),
+            parse_mode="Markdown"
+        )
+
+    elif action == "auto_trading_set_schedule":
+        # Interface for setting auto-trading schedule
+        update_user_session(user_id, {"state": "energy_services_auto_trading_schedule"})
+
+        # Get current schedule settings from user state
+        user_session = get_user_session(user_id)
+        auto_trading = user_session.get('auto_trading', {}).get('settings', {})
+        trading_hours = auto_trading.get('trading_hours', '8:00-20:00')
+
+        schedule_text = (
+            "⏰ *Set Auto-Trading Schedule*\n\n"
+            f"Current trading hours: {trading_hours}\n\n"
+            "When should auto-trading be active? Select an option below, "
+            "or type a custom schedule (e.g., '9:00-17:00,22:00-6:00')."
+        )
+
+        schedule_keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("All day (24/7)", callback_data="energy_services:set_schedule:0:00-23:59")],
+            [InlineKeyboardButton("Daytime only (8am-8pm)", callback_data="energy_services:set_schedule:8:00-20:00")],
+            [InlineKeyboardButton("Peak hours only (12pm-8pm)", callback_data="energy_services:set_schedule:12:00-20:00")],
+            [InlineKeyboardButton("Off-peak only (8pm-12pm)", callback_data="energy_services:set_schedule:20:00-12:00")],
+            [InlineKeyboardButton("⬅️ Back", callback_data="energy_services:auto_trading")]
+        ])
+
+        await query.edit_message_text(
+            schedule_text,
+            reply_markup=schedule_keyboard,
+            parse_mode="Markdown"
+        )
+
+    elif action == "set_schedule" and len(callback_data) >= 3:
+        # Set auto-trading schedule
+        schedule = callback_data[2]
+
+        # Update user state with new schedule
+        user_session = get_user_session(user_id)
+        auto_trading = user_session.get('auto_trading', {})
+        if 'settings' not in auto_trading:
+            auto_trading['settings'] = {}
+
+        auto_trading['settings']['trading_hours'] = schedule
+        update_user_session(user_id, {"auto_trading": auto_trading})
+
+        await query.edit_message_text(
+            f"✅ Auto-trading schedule updated to: {schedule}\n\n"
+            "Would you like to adjust any other auto-trading settings?",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⚙️ More Settings", callback_data="energy_services:auto_trading")],
+                [InlineKeyboardButton("⬅️ Back to Energy Services", callback_data="energy_services:start")]
+            ])
+        )
     elif action == "sell_energy":
         # User wants to sell excess energy
         update_user_session(user_id, {"state": "energy_services_sell"})
@@ -916,36 +1022,56 @@ async def handle_energy_services_callback(update: Update, context: ContextTypes.
             parse_mode="Markdown"
         )
 
+    # Update the sell_to_grid handler:
     elif action == "sell_to_grid":
-        # Execute a grid sale
-        excess_energy = 5.0  # Example amount
+        # Execute a grid sale with proper error handling
+        await query.edit_message_text("Processing your energy sale... Please wait.")
+        
+        # Get production data to determine realistic amount
+        production = prosumer_agent.get_energy_production(user_id)
+        excess_energy = round(production['daily'][-1]['kwh'] * 0.6, 1)  # Use 60% of daily production
+        
         sale_result = prosumer_agent.execute_grid_sale(user_id, excess_energy)
-
+        
+        # Handle error case
+        if sale_result.get("status") == "error":
+            await query.edit_message_text(
+                f"❌ *Error Selling Energy*\n\n"
+                f"There was a problem selling energy to the grid: {sale_result.get('message', 'Unknown error')}\n\n"
+                f"Please try again later.",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Back to Energy Services", callback_data="energy_services:start")]
+                ]),
+                parse_mode="Markdown"
+            )
+            return
+        
         # Update user session
         user_session = get_user_session(user_id)
         transactions = user_session.get('transactions', [])
         transactions.append(sale_result)
         update_user_session(user_id, {"transactions": transactions, "state": "energy_services_sale_complete"})
-
-        # Format the sale result for display
+        
+        # Format the sale result for display using safe gets
         result_text = (
             "✅ *Energy Sale Complete!*\n\n"
-            f"Amount sold: {sale_result['amount_kwh']} kWh\n"
-            f"Price: ${sale_result['price_per_kwh']}/kWh\n"
-            f"Total earnings: ${sale_result['total_amount_usd']}\n"
-            f"Transaction ID: {sale_result['transaction_id']}\n\n"
+            f"Amount sold: {sale_result.get('amount_kwh', 0)} kWh\n"
+            f"Price: ${sale_result.get('price_per_kwh', 0)}/kWh\n"
+            f"Total earnings: ${sale_result.get('total_amount_usd', 0)}\n"
+            f"Transaction ID: {sale_result.get('transaction_id', 'Unknown')}\n\n"
         )
-
+        
         if sale_result.get('nft_details'):
+            nft_details = sale_result.get('nft_details', {})
             result_text += (
                 "🎁 *NFT Reward*\n\n"
-                f"Token ID: {sale_result['nft_details']['token_id']}\n"
-                f"Value: ${sale_result['nft_details']['value_usd']}\n"
-                f"Marketplace: {sale_result['nft_details']['marketplace_url']}\n\n"
+                f"Token ID: {nft_details.get('token_id', 'Unknown')}\n"
+                f"Value: ${nft_details.get('value_usd', 0)}\n"
+                f"Marketplace: {nft_details.get('marketplace_url', 'Unknown')}\n\n"
             )
-
+        
         result_text += "Thank you for contributing to a greener grid!"
-
+        
         await query.edit_message_text(
             result_text,
             reply_markup=InlineKeyboardMarkup([
@@ -954,40 +1080,144 @@ async def handle_energy_services_callback(update: Update, context: ContextTypes.
             ]),
             parse_mode="Markdown"
         )
-
+    
+    # Update the share_p2p handler:
     elif action == "share_p2p":
-        # Execute a P2P sharing transaction
-        excess_energy = 3.5  # Example amount
+        # Execute a P2P sharing transaction with proper error handling
+        await query.edit_message_text("Processing your P2P energy sharing... Please wait.")
+        
+        # Get production data to determine realistic amount
+        production = prosumer_agent.get_energy_production(user_id)
+        excess_energy = round(production['daily'][-1]['kwh'] * 0.5, 1)  # Use 50% of daily production for P2P
+        
         sharing_result = prosumer_agent.execute_p2p_sharing(user_id, excess_energy)
-
+        
+        # Handle error case
+        if sharing_result.get("status") == "error":
+            await query.edit_message_text(
+                f"❌ *Error Sharing Energy*\n\n"
+                f"There was a problem sharing energy: {sharing_result.get('message', 'Unknown error')}\n\n"
+                f"Please try again later.",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Back to Energy Services", callback_data="energy_services:start")]
+                ]),
+                parse_mode="Markdown"
+            )
+            return
+        
         # Update user session
         user_session = get_user_session(user_id)
         transactions = user_session.get('transactions', [])
         transactions.append(sharing_result)
         update_user_session(user_id, {"transactions": transactions, "state": "energy_services_sharing_complete"})
-
-        # Format the sharing result for display
+        
+        # Format the sharing result for display with safe gets
         result_text = (
             "✅ *P2P Energy Sharing Complete!*\n\n"
-            f"Amount shared: {sharing_result['amount_kwh']} kWh\n"
-            f"Price: ${sharing_result['price_per_kwh']}/kWh\n"
-            f"Total earnings: ${sharing_result['total_amount_usd']}\n"
-            f"Recipient: {sharing_result['recipient']}\n"
-            f"Transaction ID: {sharing_result['transaction_id']}\n\n"
-            f"Community contribution: +{sharing_result['community_contribution']} points\n"
-            f"Total community score: {sharing_result['community_score']} points\n\n"
+            f"Amount shared: {sharing_result.get('amount_kwh', 0)} kWh\n"
+            f"Price: ${sharing_result.get('price_per_kwh', 0)}/kWh\n"
+            f"Total earnings: ${sharing_result.get('total_amount_usd', 0)}\n"
+            f"Recipient: {sharing_result.get('recipient', 'Unknown')}\n"
+            f"Transaction ID: {sharing_result.get('transaction_id', 'Unknown')}\n\n"
+            f"Community contribution: +{sharing_result.get('community_contribution', 0)} points\n"
+            f"Total community score: {sharing_result.get('community_score', 0)} points\n\n"
         )
-
+        
         if sharing_result.get('nft_details'):
+            nft_details = sharing_result.get('nft_details', {})
             result_text += (
                 "🎁 *NFT Reward*\n\n"
-                f"Token ID: {sharing_result['nft_details']['token_id']}\n"
-                f"Value: ${sharing_result['nft_details']['value_usd']}\n"
-                f"Marketplace: {sharing_result['nft_details']['marketplace_url']}\n\n"
+                f"Token ID: {nft_details.get('token_id', 'Unknown')}\n"
+                f"Value: ${nft_details.get('value_usd', 0)}\n"
+                f"Marketplace: {nft_details.get('marketplace_url', 'Unknown')}\n\n"
             )
-
+        
         result_text += "Thank you for sharing with your community!"
-
+        
+        await query.edit_message_text(
+            result_text,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📊 View My Stats", callback_data="energy_services:view_stats")],
+                [InlineKeyboardButton("⬅️ Back to Energy Services", callback_data="energy_services:start")]
+            ]),
+            parse_mode="Markdown"
+        )
+    
+    # Update the buy_from_grid handler:
+    elif action == "buy_from_grid":
+        # Interface for buying energy from the grid
+        update_user_session(user_id, {"state": "energy_services_buy_grid"})
+        
+        # Get current time to determine if it's peak or off-peak
+        current_hour = datetime.now().hour
+        is_peak_time = 12 <= current_hour <= 20  # Define peak time between 12pm-8pm
+        
+        # Set price based on peak/off-peak
+        price_per_kwh = 0.22 if is_peak_time else 0.08
+        
+        grid_text = (
+            "🏢 *Buy Energy from the Grid*\n\n"
+            f"Current time: {datetime.now().strftime('%H:%M')}\n"
+            f"Period: {'Peak hours' if is_peak_time else 'Off-peak hours'}\n"
+            f"Price: ${price_per_kwh}/kWh\n\n"
+            "How much energy would you like to purchase?"
+        )
+        
+        # Create options for different amounts
+        grid_keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton(f"1.0 kWh (${round(1.0 * price_per_kwh, 2)})", 
+                                  callback_data=f"energy_services:confirm_grid_buy:1.0")],
+            [InlineKeyboardButton(f"5.0 kWh (${round(5.0 * price_per_kwh, 2)})", 
+                                  callback_data=f"energy_services:confirm_grid_buy:5.0")],
+            [InlineKeyboardButton(f"10.0 kWh (${round(10.0 * price_per_kwh, 2)})", 
+                                  callback_data=f"energy_services:confirm_grid_buy:10.0")],
+            [InlineKeyboardButton("⬅️ Back", callback_data="energy_services:buy_energy")]
+        ])
+        
+        await query.edit_message_text(
+            grid_text,
+            reply_markup=grid_keyboard,
+            parse_mode="Markdown"
+        )
+    
+    elif action == "confirm_grid_buy" and len(callback_data) >= 3:
+        # Execute confirmed grid energy purchase with proper error handling
+        await query.edit_message_text("Processing your energy purchase... Please wait.")
+        
+        amount_kwh = float(callback_data[2])
+        
+        # Execute the grid purchase
+        purchase_result = prosumer_agent.execute_grid_purchase(user_id, amount_kwh)
+        
+        # Handle error case
+        if purchase_result.get("status") == "error":
+            await query.edit_message_text(
+                f"❌ *Error Purchasing Energy*\n\n"
+                f"There was a problem buying energy: {purchase_result.get('message', 'Unknown error')}\n\n"
+                f"Please try again later.",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⬅️ Back to Energy Services", callback_data="energy_services:start")]
+                ]),
+                parse_mode="Markdown"
+            )
+            return
+        
+        # Update user session
+        user_session = get_user_session(user_id)
+        transactions = user_session.get('transactions', [])
+        transactions.append(purchase_result)
+        update_user_session(user_id, {"transactions": transactions, "state": "energy_services_purchase_complete"})
+        
+        # Format the purchase result for display with safe gets
+        result_text = (
+            "✅ *Grid Energy Purchase Complete!*\n\n"
+            f"Amount purchased: {purchase_result.get('amount_kwh', 0)} kWh\n"
+            f"Price: ${purchase_result.get('price_per_kwh', 0)}/kWh\n"
+            f"Total cost: ${purchase_result.get('total_amount_usd', 0)}\n"
+            f"Transaction ID: {purchase_result.get('transaction_id', 'Unknown')}\n\n"
+            "Your battery has been charged with the purchased energy!"
+        )
+        
         await query.edit_message_text(
             result_text,
             reply_markup=InlineKeyboardMarkup([
@@ -1166,6 +1396,160 @@ async def handle_energy_services_callback(update: Update, context: ContextTypes.
             parse_mode="Markdown"
         )
 
+    elif action == "buy_energy":
+        # User wants to buy energy
+        update_user_session(user_id, {"state": "energy_services_buy"})
+
+        # Get energy trading opportunities specifically for buying
+        trading_opportunities = prosumer_agent.get_energy_trading_opportunities(user_id)
+        buy_opportunities = [opp for opp in trading_opportunities if opp.get("type") == "sell_excess"]
+
+        buy_text = (
+            "🛒 *Buy Energy from the Market*\n\n"
+            "Current grid price: $0.22/kWh (peak) / $0.08/kWh (off-peak)\n\n"
+        )
+
+        if buy_opportunities:
+            buy_text += "*Available energy sources:*\n\n"
+            for i, opp in enumerate(buy_opportunities[:5]):
+                buy_text += (
+                    f"{i+1}. **{opp.get('provider_name')}**\n"
+                    f"   Available: {opp.get('tags', {}).get('energy_available', {}).get('amount', '5.0')} kWh\n"
+                    f"   Price: ${opp.get('price_per_kwh', 0.18)}/kWh\n"
+                    f"   Type: {opp.get('tags', {}).get('source_type', 'Solar')}\n\n"
+                )
+        else:
+            buy_text += "No energy sellers found at the moment. You can buy from the grid instead.\n\n"
+
+        # Create dynamic keyboard based on opportunities
+        buttons = []
+        for i, opp in enumerate(buy_opportunities[:5]):
+            buttons.append([
+                InlineKeyboardButton(
+                    f"Buy from {opp.get('provider_name')}",
+                    callback_data=f"energy_services:buy_from:{opp.get('provider_id')}"
+                )
+            ])
+
+        buttons.append([InlineKeyboardButton("🏢 Buy from Grid", callback_data="energy_services:buy_from_grid")])
+        buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="energy_services:start")])
+
+        buy_keyboard = InlineKeyboardMarkup(buttons)
+
+        await query.edit_message_text(
+            buy_text,
+            reply_markup=buy_keyboard,
+            parse_mode="Markdown"
+        )
+
+    elif action == "buy_from" and len(callback_data) >= 3:
+        # Handle buying from a specific provider
+        provider_id = callback_data[2]
+
+        # Get trading opportunities to find the selected one
+        trading_opportunities = prosumer_agent.get_energy_trading_opportunities(user_id)
+        selected_opportunity = None
+
+        for opp in trading_opportunities:
+            if opp.get("provider_id") == provider_id:
+                selected_opportunity = opp
+                break
+
+        if not selected_opportunity:
+            await query.edit_message_text(
+                "Sorry, this buying opportunity is no longer available.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="energy_services:buy_energy")]])
+            )
+            return
+
+        # Show buying confirmation with amount input options
+        provider_name = selected_opportunity.get("provider_name", "Unknown")
+        price_per_kwh = selected_opportunity.get("price_per_kwh", 0.18)
+        max_available = float(selected_opportunity.get("tags", {}).get("energy_available", {}).get("amount", "5.0"))
+
+        # Create option buttons for different amounts
+        small_amount = 1.0  # 1 kWh
+        medium_amount = min(3.0, max_available)  # 3 kWh or max available
+        large_amount = min(5.0, max_available)  # 5 kWh or max available
+
+        buying_text = (
+            f"🛒 *Buy Energy from {provider_name}*\n\n"
+            f"This provider has up to {max_available} kWh available.\n"
+            f"Price: ${price_per_kwh}/kWh\n\n"
+            "How much would you like to buy?"
+        )
+
+        buying_keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton(f"{small_amount} kWh (${round(small_amount * price_per_kwh, 2)})",
+                                callback_data=f"energy_services:confirm_buy:{provider_id}:{small_amount}")],
+            [InlineKeyboardButton(f"{medium_amount} kWh (${round(medium_amount * price_per_kwh, 2)})",
+                                callback_data=f"energy_services:confirm_buy:{provider_id}:{medium_amount}")],
+            [InlineKeyboardButton(f"{large_amount} kWh (${round(large_amount * price_per_kwh, 2)})",
+                                callback_data=f"energy_services:confirm_buy:{provider_id}:{large_amount}")],
+            [InlineKeyboardButton("⬅️ Back", callback_data="energy_services:buy_energy")]
+        ])
+
+        await query.edit_message_text(
+            buying_text,
+            reply_markup=buying_keyboard,
+            parse_mode="Markdown"
+        )
+
+    elif action == "confirm_buy" and len(callback_data) >= 4:
+        # Execute confirmed energy purchase
+        provider_id = callback_data[2]
+        amount_kwh = float(callback_data[3])
+
+        # Get trading opportunity to get price
+        trading_opportunities = prosumer_agent.get_energy_trading_opportunities(user_id)
+        selected_opportunity = None
+        for opp in trading_opportunities:
+            if opp.get("provider_id") == provider_id:
+                selected_opportunity = opp
+                break
+
+        price_per_kwh = selected_opportunity.get("price_per_kwh", 0.18) if selected_opportunity else 0.18
+
+        # Create a custom purchase transaction (this would call a Beckn API in production)
+        purchase_result = {
+            "status": "completed",
+            "transaction_type": "p2p_purchase",
+            "amount_kwh": amount_kwh,
+            "price_per_kwh": price_per_kwh,
+            "total_amount_usd": round(amount_kwh * price_per_kwh, 2),
+            "transaction_id": f"p2p-buy-{int(datetime.now().timestamp())}",
+            "timestamp": datetime.now().isoformat(),
+            "provider": selected_opportunity.get("provider_name", "Unknown Provider") if selected_opportunity else "Unknown Provider",
+            "source_type": selected_opportunity.get("tags", {}).get("source_type", "Solar") if selected_opportunity else "Solar"
+        }
+
+        # Update user session
+        user_session = get_user_session(user_id)
+        transactions = user_session.get('transactions', [])
+        transactions.append(purchase_result)
+        update_user_session(user_id, {"transactions": transactions, "state": "energy_services_purchase_complete"})
+
+        # Format the purchase result for display
+        result_text = (
+            "✅ *Energy Purchase Complete!*\n\n"
+            f"Amount purchased: {purchase_result['amount_kwh']} kWh\n"
+            f"Price: ${purchase_result['price_per_kwh']}/kWh\n"
+            f"Total cost: ${purchase_result['total_amount_usd']}\n"
+            f"Provider: {purchase_result['provider']}\n"
+            f"Source type: {purchase_result['source_type']}\n"
+            f"Transaction ID: {purchase_result['transaction_id']}\n\n"
+            "Your battery has been charged with the purchased energy!"
+        )
+
+        await query.edit_message_text(
+            result_text,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📊 View My Stats", callback_data="energy_services:view_stats")],
+                [InlineKeyboardButton("⬅️ Back to Energy Services", callback_data="energy_services:start")]
+            ]),
+            parse_mode="Markdown"
+        )
+
     elif action == "auto_trading_default":
         # Enable auto-trading with default settings
         result = prosumer_agent.enable_auto_trading(user_id, {})
@@ -1245,35 +1629,217 @@ async def handle_energy_services_callback(update: Update, context: ContextTypes.
         )
 
     elif action == "p2p_sharing":
-        # P2P energy sharing interface
-        update_user_session(user_id, {"state": "energy_services_p2p_sharing"})
+            # P2P energy sharing interface with real data
+            update_user_session(user_id, {"state": "energy_services_p2p_sharing"})
 
-        # Get energy production data
-        production = prosumer_agent.get_energy_production(user_id)
+            # Get trading opportunities from Beckn Protocol using uei:p2p_trading domain
+            trading_opportunities = prosumer_agent.get_energy_trading_opportunities(user_id)
 
-        p2p_text = (
-            "🔌 *Peer-to-Peer Energy Sharing*\n\n"
-            "Share your excess solar energy directly with your neighbors and earn community points!\n\n"
-            f"*Available to share:* {round(production['daily'][-1]['kwh'] * 0.6, 1)} kWh\n\n"
-            "*Nearby energy consumers:*\n\n"
-            "1. **Neighbor #4521** - 1.2 miles away\n   Needs: 2.5 kWh, Offers: $0.14/kWh\n\n"
-            "2. **Community Center** - 0.8 miles away\n   Needs: 4.0 kWh, Offers: $0.13/kWh\n\n"
-            "3. **Small Business #782** - 1.5 miles away\n   Needs: 3.0 kWh, Offers: $0.15/kWh\n\n"
-            "Select a recipient to share your excess energy:"
-        )
+            # Format the opportunities for display
+            p2p_text = (
+                "🔌 *Peer-to-Peer Energy Sharing*\n\n"
+                "Share your excess solar energy directly with your community!\n\n"
+            )
 
-        p2p_keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🏠 Share with Neighbor #4521", callback_data="energy_services:share_p2p:neighbor")],
-            [InlineKeyboardButton("🏫 Share with Community Center", callback_data="energy_services:share_p2p:community")],
-            [InlineKeyboardButton("🏪 Share with Small Business", callback_data="energy_services:share_p2p:business")],
-            [InlineKeyboardButton("⬅️ Back", callback_data="energy_services:start")]
-        ])
+            # Get user's available energy to share
+            production = prosumer_agent.get_energy_production(user_id)
+            available_kwh = round(production['daily'][-1]['kwh'] * 0.6, 1)
+            p2p_text += f"*Available to share:* {available_kwh} kWh\n\n"
 
-        await query.edit_message_text(
-            p2p_text,
-            reply_markup=p2p_keyboard,
-            parse_mode="Markdown"
-        )
+            if trading_opportunities:
+                # Filter for P2P opportunities
+                p2p_opportunities = [opp for opp in trading_opportunities if opp.get("type") == "p2p_sharing"]
+
+                if p2p_opportunities:
+                    p2p_text += "*Nearby energy consumers:*\n\n"
+                    for i, opp in enumerate(p2p_opportunities[:3]):
+                        # Extract source type from tags if available
+                        source_type = opp.get("tags", {}).get("source_type", "Solar")
+                        energy_needs = opp.get("tags", {}).get("energy_available", {}).get("amount", "3.0")
+
+                        p2p_text += (
+                            f"{i+1}. **{opp.get('provider_name')}**\n"
+                            f"   Needs: {energy_needs} kWh\n"
+                            f"   Offers: ${opp.get('price_per_kwh', 0.14)}/kWh\n"
+                            f"   Type: {source_type}\n\n"
+                        )
+
+                    # Create dynamic keyboard based on opportunities
+                    buttons = []
+                    for i, opp in enumerate(p2p_opportunities[:3]):
+                        buttons.append([
+                            InlineKeyboardButton(
+                                f"Share with {opp.get('provider_name')}",
+                                callback_data=f"energy_services:share_with:{opp.get('provider_id')}"
+                            )
+                        ])
+
+                    buttons.append([InlineKeyboardButton("⚙️ Configure Sharing Settings", callback_data="energy_services:configure_sharing")])
+                    buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="energy_services:start")])
+
+                    p2p_keyboard = InlineKeyboardMarkup(buttons)
+                else:
+                    p2p_text += "No nearby P2P energy consumers found at the moment.\n\n"
+                    p2p_keyboard = InlineKeyboardMarkup([
+                        [InlineKeyboardButton("🏢 Share with Grid Instead", callback_data="energy_services:sell_to_grid")],
+                        [InlineKeyboardButton("⚙️ Configure Sharing Settings", callback_data="energy_services:configure_sharing")],
+                        [InlineKeyboardButton("⬅️ Back", callback_data="energy_services:start")]
+                    ])
+            else:
+                p2p_text += "No nearby energy consumers found at the moment.\n\n"
+                p2p_keyboard = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🏢 Share with Grid Instead", callback_data="energy_services:sell_to_grid")],
+                    [InlineKeyboardButton("⚙️ Configure Sharing Settings", callback_data="energy_services:configure_sharing")],
+                    [InlineKeyboardButton("⬅️ Back", callback_data="energy_services:start")]
+                ])
+
+            await query.edit_message_text(
+                p2p_text,
+                reply_markup=p2p_keyboard,
+                parse_mode="Markdown"
+            )
+
+    elif action == "share_with" and len(callback_data) >= 3:
+            # Handle sharing with a specific provider
+            provider_id = callback_data[2]
+
+            # Get trading opportunities to find the selected one
+            trading_opportunities = prosumer_agent.get_energy_trading_opportunities(user_id)
+            selected_opportunity = None
+
+            for opp in trading_opportunities:
+                if opp.get("provider_id") == provider_id:
+                    selected_opportunity = opp
+                    break
+
+            if not selected_opportunity:
+                await query.edit_message_text(
+                    "Sorry, this sharing opportunity is no longer available.",
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="energy_services:p2p_sharing")]])
+                )
+                return
+
+            # Show sharing confirmation with amount input options
+            provider_name = selected_opportunity.get("provider_name", "Unknown")
+            price_per_kwh = selected_opportunity.get("price_per_kwh", 0.14)
+
+            # Get user's available energy
+            production = prosumer_agent.get_energy_production(user_id)
+            available_kwh = round(production['daily'][-1]['kwh'] * 0.6, 1)
+
+            # Create option buttons for different amounts
+            quarter_kwh = round(available_kwh * 0.25, 1)
+            half_kwh = round(available_kwh * 0.5, 1)
+            full_kwh = available_kwh
+
+            sharing_text = (
+                f"📊 *Share Energy with {provider_name}*\n\n"
+                f"You have {available_kwh} kWh available to share.\n"
+                f"This provider is offering ${price_per_kwh}/kWh.\n\n"
+                "How much would you like to share?"
+            )
+
+            sharing_keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton(f"{quarter_kwh} kWh (${round(quarter_kwh * price_per_kwh, 2)})",
+                                     callback_data=f"energy_services:confirm_share:{provider_id}:{quarter_kwh}")],
+                [InlineKeyboardButton(f"{half_kwh} kWh (${round(half_kwh * price_per_kwh, 2)})",
+                                     callback_data=f"energy_services:confirm_share:{provider_id}:{half_kwh}")],
+                [InlineKeyboardButton(f"{full_kwh} kWh (${round(full_kwh * price_per_kwh, 2)})",
+                                     callback_data=f"energy_services:confirm_share:{provider_id}:{full_kwh}")],
+                [InlineKeyboardButton("⬅️ Back", callback_data="energy_services:p2p_sharing")]
+            ])
+
+            await query.edit_message_text(
+                sharing_text,
+                reply_markup=sharing_keyboard,
+                parse_mode="Markdown"
+            )
+
+    elif action == "confirm_share" and len(callback_data) >= 4:
+            # Execute confirmed P2P sharing transaction
+            provider_id = callback_data[2]
+            amount_kwh = float(callback_data[3])
+
+            # Execute the P2P sharing
+            sharing_result = prosumer_agent.execute_p2p_sharing(user_id, amount_kwh)
+
+            # Update user session
+            user_session = get_user_session(user_id)
+            transactions = user_session.get('transactions', [])
+            transactions.append(sharing_result)
+            update_user_session(user_id, {"transactions": transactions, "state": "energy_services_sharing_complete"})
+
+            # Format the sharing result for display
+            result_text = (
+                "✅ *P2P Energy Sharing Complete!*\n\n"
+                f"Amount shared: {sharing_result['amount_kwh']} kWh\n"
+                f"Price: ${sharing_result['price_per_kwh']}/kWh\n"
+                f"Total earnings: ${sharing_result['total_amount_usd']}\n"
+                f"Recipient: {sharing_result['recipient']}\n"
+                f"Transaction ID: {sharing_result['transaction_id']}\n\n"
+                f"Community contribution: +{sharing_result['community_contribution']} points\n"
+                f"Total community score: {sharing_result['community_score']} points\n\n"
+            )
+
+            if sharing_result.get('nft_details'):
+                result_text += (
+                    "🎁 *NFT Reward*\n\n"
+                    f"Token ID: {sharing_result['nft_details']['token_id']}\n"
+                    f"Value: ${sharing_result['nft_details']['value_usd']}\n"
+                    f"Marketplace: {sharing_result['nft_details']['marketplace_url']}\n\n"
+                )
+
+            result_text += "Thank you for sharing with your community!"
+
+            await query.edit_message_text(
+                result_text,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("📊 View My Stats", callback_data="energy_services:view_stats")],
+                    [InlineKeyboardButton("⬅️ Back to Energy Services", callback_data="energy_services:start")]
+                ]),
+                parse_mode="Markdown"
+            )
+
+    elif action == "configure_sharing":
+            # Interface for configuring P2P sharing preferences
+            update_user_session(user_id, {"state": "energy_services_configure_sharing"})
+
+            # Get current sharing settings from user state
+            user_session = get_user_session(user_id)
+            sharing_settings = user_session.get('sharing_settings', {
+                'daily_limit_kwh': 10.0,
+                'min_price_per_kwh': 0.12,
+                'preferred_recipients': 'any',
+                'auto_share': False,
+                'share_percentage': 60
+            })
+
+            config_text = (
+                "⚙️ *Configure P2P Sharing Settings*\n\n"
+                f"Current settings:\n\n"
+                f"• Daily sharing limit: {sharing_settings['daily_limit_kwh']} kWh\n"
+                f"• Minimum price: ${sharing_settings['min_price_per_kwh']}/kWh\n"
+                f"• Preferred recipients: {sharing_settings['preferred_recipients'].capitalize()}\n"
+                f"• Auto-share excess: {'Enabled' if sharing_settings['auto_share'] else 'Disabled'}\n"
+                f"• Share percentage: {sharing_settings['share_percentage']}% of excess\n\n"
+                "Which setting would you like to change?"
+            )
+
+            config_keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("📏 Set Daily Limit", callback_data="energy_services:set_daily_limit")],
+                [InlineKeyboardButton("💰 Set Minimum Price", callback_data="energy_services:set_min_price")],
+                [InlineKeyboardButton("👥 Set Preferred Recipients", callback_data="energy_services:set_recipients")],
+                [InlineKeyboardButton(f"🔄 {'Disable' if sharing_settings['auto_share'] else 'Enable'} Auto-Share",
+                                    callback_data="energy_services:toggle_auto_share")],
+                [InlineKeyboardButton("📊 Set Share Percentage", callback_data="energy_services:set_share_percentage")],
+                [InlineKeyboardButton("⬅️ Back", callback_data="energy_services:p2p_sharing")]
+            ])
+
+            await query.edit_message_text(
+                config_text,
+                reply_markup=config_keyboard,
+                parse_mode="Markdown"
+            )
 
     elif action == "community_rank":
         # Show community ranking

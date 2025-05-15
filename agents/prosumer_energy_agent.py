@@ -515,6 +515,7 @@ class ProsumerEnergyAgent:
         
         return trading_record
     
+    # Update the execute_grid_sale function
     def execute_grid_sale(self, user_id: str, amount_kwh: float) -> Dict[str, Any]:
         """Execute a sale of energy to the grid."""
         try:
@@ -581,72 +582,14 @@ class ProsumerEnergyAgent:
                 "status": "error",
                 "message": str(e),
                 "transaction_type": "grid_sale",
-                "amount_kwh": amount_kwh
-            }
-    
-    def execute_grid_purchase(self, user_id: str, amount_kwh: float) -> Dict[str, Any]:
-        """Execute a purchase of energy from the grid."""
-        try:
-            # Call Beckn API to execute the trade
-            user_state = self.get_state(user_id)
-            auto_trading_settings = user_state.get('auto_trading', {})
-            
-            # Calculate price
-            price_per_kwh = min(0.10, auto_trading_settings.get('max_buy_price_kwh', 0.08))
-            
-            # Get trading opportunities
-            opportunities = self.get_energy_trading_opportunities(user_id)
-            
-            if opportunities:
-                provider_id = opportunities[0]["provider_id"]
-            else:
-                provider_id = "grid-op-1"  # Default if no providers found
-            
-            # Execute the energy trade via API
-            response = self.beckn_client.execute_energy_trade(
-                provider_id, 
-                amount_kwh, 
-                price_per_kwh, 
-                "BUY"
-            )
-            
-            # Process response
-            transaction_id = f"buy-{user_id[:4]}-{int(datetime.now().timestamp())}"
-            
-            order = extract_order_details(response)
-            if order and order.get("id"):
-                transaction_id = order["id"]
-            
-            purchase_result = {
-                "status": "completed",
-                "transaction_type": "grid_purchase",
                 "amount_kwh": amount_kwh,
-                "price_per_kwh": price_per_kwh,
-                "total_amount_usd": round(amount_kwh * price_per_kwh, 2),
-                "transaction_id": transaction_id,
-                "timestamp": datetime.now().isoformat()
-            }
-            
-            # Update user stats
-            if user_id in self.state:
-                if 'transactions' not in self.state[user_id]:
-                    self.state[user_id]['transactions'] = []
-                self.state[user_id]['transactions'].append(purchase_result)
-                
-                # Update total costs
-                self.state[user_id]['total_costs'] = self.state[user_id].get('total_costs', 0) + purchase_result["total_amount_usd"]
-            
-            return purchase_result
-            
-        except Exception as e:
-            logger.error(f"Error executing grid purchase for user {user_id}: {str(e)}")
-            return {
-                "status": "error",
-                "message": str(e),
-                "transaction_type": "grid_purchase",
-                "amount_kwh": amount_kwh
+                "price_per_kwh": 0.0,  # Add default value
+                "total_amount_usd": 0.0,  # Add default value
+                "transaction_id": f"failed-{int(datetime.now().timestamp())}",  # Add default value
+                "timestamp": datetime.now().isoformat()  # Add default value
             }
     
+    # Update the execute_p2p_sharing function
     def execute_p2p_sharing(self, user_id: str, amount_kwh: float) -> Dict[str, Any]:
         """Execute a peer-to-peer energy sharing transaction."""
         try:
@@ -658,8 +601,8 @@ class ProsumerEnergyAgent:
             price_per_kwh = max(0.15, auto_trading_settings.get('min_sell_price_kwh', 0.12) * 0.9)
             
             # Get trading opportunities, looking specifically for P2P ones
-            opportunities = self.get_energy_trading_opportunities(user_id)
-            p2p_opportunities = [opp for opp in opportunities if opp.get("type") == "p2p_sharing"]
+            trading_opportunities = self.get_energy_trading_opportunities(user_id)
+            p2p_opportunities = [opp for opp in trading_opportunities if opp.get("type") == "p2p_sharing"]
             
             if p2p_opportunities:
                 provider_id = p2p_opportunities[0]["provider_id"]
@@ -728,8 +671,83 @@ class ProsumerEnergyAgent:
                 "status": "error",
                 "message": str(e),
                 "transaction_type": "p2p_sharing",
-                "amount_kwh": amount_kwh
+                "amount_kwh": amount_kwh,
+                "price_per_kwh": 0.0,
+                "total_amount_usd": 0.0,
+                "community_contribution": 0.0,
+                "community_score": 0.0,
+                "transaction_id": f"failed-p2p-{int(datetime.now().timestamp())}",
+                "timestamp": datetime.now().isoformat(),
+                "nft_details": None,
+                "recipient": "Unknown"
             }
-
+    
+    # Update the execute_grid_purchase function
+    def execute_grid_purchase(self, user_id: str, amount_kwh: float) -> Dict[str, Any]:
+        """Execute a purchase of energy from the grid."""
+        try:
+            # Call Beckn API to execute the trade
+            user_state = self.get_state(user_id)
+            auto_trading_settings = user_state.get('auto_trading', {})
+            
+            # Calculate price
+            price_per_kwh = min(0.10, auto_trading_settings.get('max_buy_price_kwh', 0.08))
+            
+            # Get trading opportunities
+            opportunities = self.get_energy_trading_opportunities(user_id)
+            
+            if opportunities:
+                provider_id = opportunities[0]["provider_id"]
+            else:
+                provider_id = "grid-op-1"  # Default if no providers found
+            
+            # Execute the energy trade via API
+            response = self.beckn_client.execute_energy_trade(
+                provider_id, 
+                amount_kwh, 
+                price_per_kwh, 
+                "BUY"
+            )
+            
+            # Process response
+            transaction_id = f"buy-{user_id[:4]}-{int(datetime.now().timestamp())}"
+            
+            order = extract_order_details(response)
+            if order and order.get("id"):
+                transaction_id = order["id"]
+            
+            purchase_result = {
+                "status": "completed",
+                "transaction_type": "grid_purchase",
+                "amount_kwh": amount_kwh,
+                "price_per_kwh": price_per_kwh,
+                "total_amount_usd": round(amount_kwh * price_per_kwh, 2),
+                "transaction_id": transaction_id,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Update user stats
+            if user_id in self.state:
+                if 'transactions' not in self.state[user_id]:
+                    self.state[user_id]['transactions'] = []
+                self.state[user_id]['transactions'].append(purchase_result)
+                
+                # Update total costs
+                self.state[user_id]['total_costs'] = self.state[user_id].get('total_costs', 0) + purchase_result["total_amount_usd"]
+            
+            return purchase_result
+            
+        except Exception as e:
+            logger.error(f"Error executing grid purchase for user {user_id}: {str(e)}")
+            return {
+                "status": "error",
+                "message": str(e),
+                "transaction_type": "grid_purchase",
+                "amount_kwh": amount_kwh,
+                "price_per_kwh": 0.0,
+                "total_amount_usd": 0.0,
+                "transaction_id": f"failed-buy-{int(datetime.now().timestamp())}",
+                "timestamp": datetime.now().isoformat()
+            }
 # Create a singleton instance
 prosumer_agent = ProsumerEnergyAgent()
