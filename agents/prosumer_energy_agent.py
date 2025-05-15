@@ -22,7 +22,7 @@ class ProsumerEnergyAgent:
         try:
             # Using Google Vertex AI if configured
             from google.cloud import aiplatform
-            from langchain.llms import VertexAI
+            from langchain_community.llms import VertexAI
             from langchain.chains import LLMChain
             from langchain.prompts import PromptTemplate
             

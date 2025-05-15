@@ -8,6 +8,9 @@ from telegram.ext import (
     ContextTypes,
     filters
 )
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
 
 from .handlers import (
     handle_start,
@@ -20,6 +23,11 @@ from .handlers import (
 )
 
 logger = logging.getLogger(__name__)
+# Load environment variables from .env file
+load_dotenv("config/secrets.env")
+
+genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+
 
 def setup_telegram_bot(token):
     """Create and configure the Telegram bot application."""
@@ -50,4 +58,7 @@ async def error_handler(update, context):
     logger.error(f"Update {update} caused error: {context.error}")
     # Notify user about the error
     if update:
-        await update.message.reply_text("Sorry, something went wrong. Please try again later.")
+        if update.message:
+            await update.message.reply_text("Sorry, something went wrong. Please try again later.")
+        elif update.callback_query:
+            await update.callback_query.message.reply_text("Sorry, something went wrong. Please try again later.")

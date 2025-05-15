@@ -103,8 +103,7 @@ class SolarOnboardingAgent:
         """
         try:
             # Call Beckn API to search for solar products
-            response = self.beckn_client.search_solar_products("solar")
-            
+            response = self.beckn_client.search_solar_products(query="solar")
             # Extract products from response
             products = []
             
@@ -113,11 +112,9 @@ class SolarOnboardingAgent:
                     if "message" in resp and "catalog" in resp["message"]:
                         catalog = resp["message"]["catalog"]
                         providers = catalog.get("providers", [])
-                        
                         for provider in providers:
                             provider_id = provider.get("id")
                             provider_name = provider.get("descriptor", {}).get("name", "Unknown")
-                            
                             for item in provider.get("items", []):
                                 product = {
                                     "id": item.get("id"),
@@ -241,7 +238,7 @@ class SolarOnboardingAgent:
                 service_id, 
                 fulfillment_id, 
                 customer_info, 
-                domain="deg:service"
+                domain="deg:schemes"
             )
             
             # Extract order details

@@ -80,7 +80,6 @@ def extract_subsidies_from_response(response_data):
                     "currency": item.get("price", {}).get("currency", "USD"),
                     "tags": {}
                 }
-                
                 # Extract details from tags
                 for tag in item.get("tags", []):
                     tag_desc = tag.get("descriptor", {}).get("description")
