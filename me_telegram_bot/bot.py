@@ -8,6 +8,9 @@ from telegram.ext import (
     ContextTypes,
     filters
 )
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
 
 from .handlers import (
     handle_start,
@@ -20,6 +23,11 @@ from .handlers import (
 )
 
 logger = logging.getLogger(__name__)
+# Load environment variables from .env file
+load_dotenv("config/secrets.env")
+
+genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+
 
 def setup_telegram_bot(token):
     """Create and configure the Telegram bot application."""

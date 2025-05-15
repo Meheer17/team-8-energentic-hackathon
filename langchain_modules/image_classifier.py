@@ -4,6 +4,10 @@ import base64
 from typing import Dict, Any, Optional
 from google.cloud import aiplatform
 from google.cloud.aiplatform.gapic.schema import predict
+from me_telegram_bot.bot import genai
+from PIL import Image
+import requests
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -26,42 +30,57 @@ class RooftopImageClassifier:
         self.mock_mode = os.getenv("MOCK_IMAGE_ANALYSIS", "true").lower() == "true"
     
     def analyze_image(self, image_path: str) -> Dict[str, Any]:
-        """Analyze a rooftop image to estimate solar potential.
+        
+        
+        """
+        Analyzes a rooftop image to determine if it's suitable for solar panel installation.
         
         Args:
-            image_path: Path to the image file
-            
+            image_path: Path to the rooftop image or URL
+        
         Returns:
-            Dictionary containing analysis results
+            Analysis results including suitability assessment and reasoning
         """
         try:
-            if self.mock_mode:
-                return self._mock_analysis_result(image_path)
+            # Check if image_path is a URL
+            if image_path.startswith('http://') or image_path.startswith('https://'):
             
-            # Initialize Vertex AI
-            aiplatform.init(project=self.project_id, location=self.location)
+            # Download the image from URL
+                response = requests.get(image_path)
+                img = Image.open(BytesIO(response.content))
+            else:
+            # Load the image from local file path
+                img = Image.open(image_path)
             
-            # Load and encode image
-            with open(image_path, "rb") as f:
-                image_content = f.read()
+            # Initialize the Gemini Pro Vision model
+            model = genai.GenerativeModel('gemini-1.5-flash')
             
-            encoded_content = base64.b64encode(image_content).decode("utf-8")
+            # Create the prompt with specific evaluation criteria
+            prompt = """
+            Analyze this rooftop image and determine if it's suitable for solar panel installation.
             
-            # Create the instance
-            instances = [{"image": {"bytesBase64Encoded": encoded_content}}]
+            Consider the following factors:
+            1. Roof orientation and angle
+            2. Sunlight exposure and shading
+            3. Available surface area
+            4. Potential obstructions (chimneys, vents, etc.)
+            5. Roof condition and material
             
-            # Initialize endpoint
-            endpoint = aiplatform.Endpoint(self.endpoint_id)
+            Provide the following in your response:
+            - A clear yes/no suitability assessment
+            - Any concerns or limitations 
+
+            Remember:- 
+                Keep the response within 100 tokens.
+            """
             
-            # Make prediction
-            response = endpoint.predict(instances=instances)
-            
-            # Process response
-            return self._process_prediction_response(response)
-            
+            # Generate the analysis
+            response = model.generate_content([prompt, img])
+            return response.text
         except Exception as e:
             logger.error(f"Error analyzing image: {str(e)}")
             return {"error": str(e), "suitable": False}
+    
     
     def analyze_image_url(self, image_url: str) -> Dict[str, Any]:
         """Analyze a rooftop image from a URL to estimate solar potential.

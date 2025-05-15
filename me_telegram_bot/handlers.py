@@ -34,7 +34,7 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         f"I can help you with:\n\n"
         f"1️⃣ *Onboard for Rooftop Solar*: Find subsidies, check eligibility, connect with installers\n\n"
         f"2️⃣ *Use My Installed System*: Sell excess energy, participate in demand response, earn with NFTs\n\n"
-        f"What would you like to do today?"
+        "What would you like to do today?"
     )
 
     # Send message with main menu keyboard
@@ -43,18 +43,39 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         reply_markup=get_main_menu_keyboard()
     )
 
+
+
 async def handle_unknown_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle unknown callback queries."""
     query = update.callback_query
     await query.answer()  # Answer the callback query to remove the loading state
-
-    # Provide a helpful message and a way to get back to the main menu
-    await query.edit_message_text(
-        "Sorry, I couldn't process that request. Please try again or use the button below to return to the main menu.",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🏠 Return to Main Menu", callback_data="solar_onboarding:back_to_main")]
-        ])
-    )
+    print(query.data)
+    # Check if the callback data is "solar_onboarding:back_to_main"
+    if query.data == "solar_onboarding:back_to_main":
+        # Forward to the start command handler
+        user = update.effective_user
+        if user:
+            # Create a new context for the start command
+            await handle_start(update, context)
+            return
+    
+    # For all other unknown callbacks, provide a helpful message
+    try:
+        await query.edit_message_text(
+            "Sorry, I couldn't process that request. Please try again or use the button below to return to the main menu.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🏠 Return to Main Menu", callback_data="solar_onboarding:back_to_main")]
+            ])
+        )
+    except Exception as e:
+        # Fallback if editing the message fails
+        logger.error(f"Error handling unknown callback: {e}")
+        if update.effective_chat:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, I encountered an error. Please use /start to begin again.",
+                reply_markup=get_main_menu_keyboard()
+            )
 
 # Help command handler
 async def handle_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -235,6 +256,7 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
         options_keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("🔍 Search Subsidies", callback_data="solar_onboarding:search_subsidies")],
             [InlineKeyboardButton("🏪 Find Installers", callback_data="solar_onboarding:find_installers")],
+            [InlineKeyboardButton("🛒 Buy Solar Panels", callback_data="solar_onboarding:find_products")],
             [InlineKeyboardButton("🧮 Calculate ROI", callback_data="solar_onboarding:calc_roi")],
             [InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="solar_onboarding:back_to_main")]
         ])
@@ -251,8 +273,7 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
     elif action == "search_subsidies":
         # Show available subsidies
         user_session = get_user_session(user_id)
-        subsidies = user_session.get("subsidies", [])
-
+        subsidies = []#user_session.get("subsidies", [])        
         # If subsidies weren't loaded yet, load them now
         if not subsidies:
             subsidies = solar_agent.search_subsidies(user_id)
@@ -268,7 +289,6 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
 
         # Format the subsidies for display
         subsidies_text = "Here are the available subsidies for your area:\n\n"
-        print(subsidies_text)
         subsidy_buttons = []
         for i, subsidy in enumerate(subsidies[:3]):  # Show top 3 subsidies
             provider_name = subsidy.get("provider_name", "Unknown Provider")
@@ -283,12 +303,11 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             if price != "0":
                 subsidies_text += f"Value: {price} {currency}\n"
             subsidies_text += "\n"
-
             # Add a button for each subsidy
             subsidy_buttons.append([
                 InlineKeyboardButton(
-                    f"Apply for {name}",
-                    callback_data=f"solar_onboarding:apply_subsidy:{subsidy.get('provider_id')}:{subsidy.get('id'):{fulfillment_id}}"
+                    f"Apply for {name}", 
+                    callback_data=f"solar_onboarding:apply_subsidy:{subsidy.get('provider_id')}:{subsidy.get('id')}:{subsidy.get("fulfillment_id", "615")}"
                 )
             ])
 
@@ -392,8 +411,7 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
         # User is applying for a specific subsidy
         provider_id = callback_data[2]
         subsidy_id = callback_data[3]
-        fullfillment_id = callback_data[4]
-        print(provider_id, subsidy_id, fullfillment_id)
+        fulfillment_id = callback_data[4]
         # Update state
         update_user_session(user_id, {
             "state": "solar_onboarding_applying_subsidy",
@@ -406,7 +424,7 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             "Great! Let's apply for this subsidy. I'll need to collect some information.\n\n"
             "Would you like to confirm your application with the information you've already provided?",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ Confirm Application", callback_data=f"solar_onboarding:confirm_subsidy:{provider_id}:{subsidy_id}:{fullfillment_id}")],
+                [InlineKeyboardButton("✅ Confirm Application", callback_data=f"solar_onboarding:confirm_subsidy:{provider_id}:{subsidy_id}:{fulfillment_id}")],
                 [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:search_subsidies")]
             ])
         )
@@ -415,8 +433,8 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
         # User confirmed subsidy application
         provider_id = callback_data[2]
         subsidy_id = callback_data[3]
-        fullfillment_id = callback_data[4]
-
+        fulfillment_id = callback_data[4]
+       
         # Get user info
         user_session = get_user_session(user_id)
         user_name = update.effective_user.first_name
@@ -433,8 +451,8 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
         }
 
         # Submit the subsidy application using Beckn
-        order_confirmation = solar_agent.confirm_order(user_id, provider_id, subsidy_id, fullfillment_id, customer_info)
 
+        order_confirmation = solar_agent.confirm_order(user_id, provider_id, subsidy_id, fulfillment_id, customer_info)
         if order_confirmation and "id" in order_confirmation:
             # Store the order ID
             update_user_session(user_id, {
@@ -500,7 +518,7 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                     [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:find_installers")]
                 ])
             )
-        elif action == "select_product" and len(callback_data) >= 4:
+        elif action == "select_product" and len(callback_data) >= 2:
             # User is selecting a specific solar panel product
             provider_id = callback_data[2]
             product_id = callback_data[3]
@@ -510,51 +528,71 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                 "state": "solar_onboarding_selecting_product",
                 "selected_product_provider": provider_id,
                 "selected_product": product_id
-            })
-
-            # This would normally call the Beckn API to select the product
-            # For now, simulate the selection
-
-            # Show product details and confirmation
-            await query.edit_message_text(
-                "You've selected this solar panel system. Would you like to purchase it?",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("✅ Purchase Product", callback_data=f"solar_onboarding:init_product:{provider_id}:{product_id}")],
-                    [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:find_products")]
-                ])
-            )
-
+            })  
+            # Call the Beckn select API
+            select_response = solar_agent.select_solar_product(user_id, provider_id, product_id)
+            
+            if select_response and "order" in select_response:
+                order = select_response["order"]
+                item = order["items"][0]
+                price = item["price"]["value"]
+                currency = item["price"]["currency"]
+                
+                # Show product details and confirmation
+                await query.edit_message_text(
+                    f"You've selected *{item['descriptor']['name']}*.\n\n"
+                    f"Price: {price} {currency}\n"
+                    f"Description: {item['descriptor']['short_desc']}\n\n"
+                    "Would you like to proceed with the purchase?",
+                    parse_mode="Markdown",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("✅ Purchase Product", callback_data=f"solar_onboarding:init_product:{provider_id}:{product_id}")],
+                        [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:find_products")]
+                    ])
+                )
+            else:
+                await query.edit_message_text(
+                    "There was a problem selecting this product. Please try again later.",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:find_products")]
+                    ])
+                )
         elif action == "init_product" and len(callback_data) >= 4:
             # Initialize the order for the selected product
             provider_id = callback_data[2]
             product_id = callback_data[3]
-
-            # This would normally call the Beckn API to initialize the product order
-            # For now, simulate the initialization
-
-            # Update state
-            update_user_session(user_id, {
-                "state": "solar_onboarding_init_product",
-                "product_init": {"provider_id": provider_id, "product_id": product_id}
-            })
-
-            # Show order summary and confirmation
-            await query.edit_message_text(
-                "Your product order has been initialized!\n\n"
-                "To complete your purchase, I'll need to collect your contact and delivery information.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("📝 Provide Delivery Info", callback_data=f"solar_onboarding:provide_delivery_info:{provider_id}:{product_id}")],
-                    [InlineKeyboardButton("⬅️ Back", callback_data=f"solar_onboarding:select_product:{provider_id}:{product_id}")]
-                ])
-            )
-
+            
+            # Call the Beckn init API
+            init_response = solar_agent.init_solar_product_order(user_id, provider_id, product_id)
+            
+            if init_response and "order" in init_response:
+                # Update state
+                update_user_session(user_id, {
+                    "state": "solar_onboarding_init_product",
+                    "product_init": {"provider_id": provider_id, "product_id": product_id}
+                })
+                
+                # Show order summary and confirmation
+                await query.edit_message_text(
+                    "Your product order has been initialized!\n\n"
+                    "To complete your purchase, I'll need to collect your contact and delivery information.",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("📝 Provide Delivery Info", callback_data=f"solar_onboarding:provide_delivery_info:{provider_id}:{product_id}")],
+                        [InlineKeyboardButton("⬅️ Back", callback_data=f"solar_onboarding:select_product:{provider_id}:{product_id}")]
+                    ])
+                )
+            else:
+                await query.edit_message_text(
+                    "There was a problem initializing your order. Please try again later.",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("⬅️ Back", callback_data=f"solar_onboarding:select_product:{provider_id}:{product_id}")]
+                    ])
+                )
+        
         elif action == "provide_delivery_info" and len(callback_data) >= 4:
             # User is providing delivery info for product order
             provider_id = callback_data[2]
             product_id = callback_data[3]
-
-            # In a real app, we would collect this info via form
-            # Here we'll use example data for demonstration
             user_name = update.effective_user.first_name
             user_session = get_user_session(user_id)
             address = user_session.get("address", "Default Address")
@@ -571,39 +609,39 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
                     "address": address
                 }
             }
-
-            # Update state with delivery info
-            update_user_session(user_id, {
-                "state": "solar_onboarding_confirming_product",
-                "delivery_info": customer_info
-            })
-
-            # This would normally call the Beckn API to confirm the product order
-            # For now, simulate the confirmation
-
-            # Generate a mock order ID
-            import uuid
-            mock_order_id = f"PROD-{str(uuid.uuid4())[:8]}"
-
-            # Store the order ID
-            update_user_session(user_id, {
-                "state": "solar_onboarding_product_confirmed",
-                "product_order_id": mock_order_id
-            })
-
-            await query.edit_message_text(
-                "✅ *Solar Panel System Purchase Confirmed!*\n\n"
-                f"Order ID: `{mock_order_id}`\n\n"
-                "Your solar panel system has been ordered and will be delivered to your address. "
-                "Would you like to schedule an installation with one of our certified installers?",
-                parse_mode="Markdown",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("🏪 Find Installers", callback_data="solar_onboarding:find_installers")],
-                    [InlineKeyboardButton("📊 View Solar Summary", callback_data="solar_onboarding:view_summary")],
-                    [InlineKeyboardButton("🏠 Return to Main Menu", callback_data="solar_onboarding:back_to_main")]
-                ])
-            )
-
+            
+            # Call the Beckn confirm API
+            confirm_response = solar_agent.confirm_solar_product_order(user_id, provider_id, product_id, customer_info)
+            
+            if confirm_response and "order" in confirm_response:
+                order_id = confirm_response["order"]["id"]
+                
+                # Store the order ID
+                update_user_session(user_id, {
+                    "state": "solar_onboarding_product_confirmed",
+                    "product_order_id": order_id
+                })
+                
+                await query.edit_message_text(
+                    "✅ *Solar Panel System Purchase Confirmed!*\n\n"
+                    f"Order ID: `{order_id}`\n\n"
+                    "Your solar panel system has been ordered and will be delivered to your address. "
+                    "Would you like to schedule an installation with one of our certified installers?",
+                    parse_mode="Markdown",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("🏪 Find Installers", callback_data="solar_onboarding:find_installers")],
+                        [InlineKeyboardButton("📊 View Solar Summary", callback_data="solar_onboarding:view_summary")],
+                        [InlineKeyboardButton("🏠 Return to Main Menu", callback_data="solar_onboarding:back_to_main")]
+                    ])
+                )
+            else:
+                await query.edit_message_text(
+                    "❌ There was a problem confirming your order. Please try again later.",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("⬅️ Back", callback_data=f"solar_onboarding:init_product:{provider_id}:{product_id}")]
+                    ])
+                )
+        
         else:
             await query.edit_message_text(
                 "There was a problem selecting this service. Please try again later.",
@@ -616,7 +654,6 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
         # Initialize the order for the selected installer service
         provider_id = callback_data[2]
         service_id = callback_data[3]
-
         # Initialize the order using Beckn
         order_init = solar_agent.initialize_order(user_id, provider_id, service_id)
 
@@ -704,12 +741,43 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
     elif action == "find_products":
         # Search for solar panel products
         user_session = get_user_session(user_id)
-        products = user_session.get("products", [])
-
+        products = []#user_session.get("products", [])
+        
         # If products weren't loaded yet, load them now
         if not products:
-            products = solar_agent.search_solar_products(user_id)
-
+            # Call the Beckn search API to get solar products
+            # Search for solar panel products
+            search_response = solar_agent.search_solar_products(user_id)
+            
+            # Process the search response directly from the format you provided
+            if isinstance(search_response, list):
+                for product in search_response:
+                    products.append({
+                        "id": product.get("id", ""),
+                        "provider_id": product.get("provider_id", ""),
+                        "name": product.get("name", "Unknown Product"),
+                        "description": product.get("description", ""),
+                        "price": product.get("price", "0"),
+                        "currency": product.get("currency", "USD"),
+                        "image": product.get("image", "")
+                    })
+            # For backward compatibility with the original format
+            elif isinstance(search_response, dict) and "catalog" in search_response:
+                for provider in search_response.get("catalog", {}).get("providers", []):
+                    for item in provider.get("items", []):
+                        if "solar" in item.get("descriptor", {}).get("name", "").lower():
+                            products.append({
+                                "id": item.get("id", ""),
+                                "provider_id": provider.get("id", ""),
+                                "provider_name": provider.get("descriptor", {}).get("name", "Unknown Provider"),
+                                "name": item.get("descriptor", {}).get("name", "Unknown Product"),
+                                "description": item.get("descriptor", {}).get("short_desc", ""),
+                                "price": item.get("price", {}).get("value", "0"),
+                                "currency": item.get("price", {}).get("currency", "USD"),
+                            })
+            
+            # Store the processed products in the user session
+            update_user_session(user_id, {"products": products})
         if not products:
             await query.edit_message_text(
                 "I couldn't find any solar products at the moment. Please try again later.",
@@ -721,7 +789,6 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
 
         # Format the products for display
         products_text = "Here are recommended solar panel systems for your needs:\n\n"
-
         product_buttons = []
         for i, product in enumerate(products[:3]):  # Show top 3 products
             name = product.get("name", "Unknown Product")
@@ -736,8 +803,9 @@ async def handle_solar_onboarding_callback(update: Update, context: ContextTypes
             # Add a button for each product
             product_buttons.append([
                 InlineKeyboardButton(
-                    f"Select {name}",
-                    callback_data=f"solar_onboarding:select_product:{product.get('provider_id')}:{product.get('id')}"
+
+                    f"Select {name}", 
+                    callback_data=f"solar_onboarding:select_product"
                 )
             ])
 
@@ -1823,8 +1891,8 @@ async def handle_photo_message(update: Update, context: ContextTypes.DEFAULT_TYP
     user_id = str(update.effective_user.id)
     user_session = get_user_session(user_id)
 
-    # Check if we're expecting a rooftop photo
-    if user_session.get("state") != "solar_onboarding_awaiting_photo":
+    # Check if we're expecting a rooftop photo  
+    if user_session.get("state") == "solar_onboarding_awaiting_photo": #change to !=
         await update.message.reply_text(
             "Thanks for the photo! If you're trying to analyze your roof for solar potential, "
             "please start the solar onboarding process first using the menu."
@@ -1842,45 +1910,14 @@ async def handle_photo_message(update: Update, context: ContextTypes.DEFAULT_TYP
     file_url = file.file_path
 
     # Analyze the image using the rooftop analyzer
-    analysis = rooftop_analyzer.analyze_image_url(file_url)
+    analysis = rooftop_analyzer.analyze_image(file_url)
 
-    # Store analysis in user state
     update_user_session(user_id, {"rooftop_analysis": analysis, "state": "solar_onboarding_roof_analyzed"})
 
-    # Format the response based on suitability
-    if analysis.get("suitable", False):
-        response = (
-            "✅ *Good News!* Your roof looks suitable for solar panels.\n\n"
-            f"*Analysis Results:*\n"
-            f"• Usable area: {analysis.get('suitable_area_sqm', 'N/A')} sq.m\n"
-            f"• Potential capacity: {analysis.get('estimated_capacity_kw', 'N/A')} kW\n"
-            f"• Estimated annual generation: {analysis.get('annual_generation_kwh', 'N/A')} kWh\n"
-            f"• Roof orientation: {analysis.get('roof_orientation', 'N/A')}\n"
-            f"• Shading factor: {analysis.get('shading_factor', 'N/A')}\n\n"
-            "Would you like to calculate your potential savings with this system?"
-        )
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("💰 Calculate ROI", callback_data="solar_onboarding:calculate_roi")],
+        [InlineKeyboardButton("🔍 Find Installers", callback_data="solar_onboarding:find_installers")],
+        [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:confirm")]
+    ])
 
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("💰 Calculate ROI", callback_data="solar_onboarding:calculate_roi")],
-            [InlineKeyboardButton("🔍 Find Installers", callback_data="solar_onboarding:find_installers")],
-            [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:confirm")]
-        ])
-    else:
-        response = (
-            "⚠️ *Solar Potential Analysis*\n\n"
-            "Based on the image provided, your roof may not be ideal for solar installation.\n\n"
-            f"*Reason:* {analysis.get('reason', 'Unable to determine')}\n\n"
-            "However, there might still be options! You could consider:\n"
-            "• Having an installer perform an in-person assessment\n"
-            "• Ground-mounted solar panels if you have available land\n"
-            "• Community solar projects in your area\n\n"
-            "Would you like to explore these alternatives?"
-        )
-
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🏪 Find Installers Anyway", callback_data="solar_onboarding:find_installers")],
-            [InlineKeyboardButton("🌞 Explore Alternatives", callback_data="solar_onboarding:explore_alternatives")],
-            [InlineKeyboardButton("⬅️ Back", callback_data="solar_onboarding:confirm")]
-        ])
-
-    await update.message.reply_markdown(response, reply_markup=keyboard)
+    await update.message.reply_markdown(analysis, reply_markup=keyboard)

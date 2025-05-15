@@ -17,75 +17,213 @@
         "type": "grid_flexibility"
       }
     ],
-    "subsidies": [
-      {
-        "id": "458",
-        "provider_id": "323",
-        "provider_name": "Pacific Gas and Electric Company (PG&E)",
-        "provider_desc": "Demand response and smart energy programs",
-        "name": "Home Battery Discharge Program",
-        "description": "Discharge home battery during peak demand hours",
-        "long_description": "A program that enables residential users with battery storage to discharge energy back to the grid during peak demand events. Participants receive compensation for every kWh discharged.",
-        "image": "https://static.vecteezy.com/system/resources/previews/004/820/773/non_2x/upside-down-arrow-with-electrical-plug-and-lightning-free-vector.jpg",
-        "price": "0",
-        "currency": "USD",
-        "tags": {
-          "program_details": {
-            "program_type": "Battery Discharge"
+    "selected_provider": "323",
+    "selected_subsidy": "460",
+    "subsidy_order_id": "3795",
+    "rooftop_analysis": "Yes, the roof appears suitable for solar panel installation.\n\nConcerns/Limitations:  The available surface area may be limited by the dormer windows.  Roof orientation and angle need to be assessed for optimal solar gain.  Shading from nearby trees (not fully visible) should be investigated.  The roof's condition needs verification to ensure it can support the added weight.\n",
+    "selected_installer": "330",
+    "selected_service": "467",
+    "order_init": {
+      "provider": {
+        "id": "330",
+        "descriptor": {
+          "name": "Sunrun",
+          "short_desc": "National solar provider",
+          "long_desc": "Sunrun is one of the leading residential solar and battery service providers in the U.S., offering affordable clean energy solutions for homeowners.",
+          "additional_desc": {
+            "url": "beckn://sunrun.com"
           },
-          "device_type": {
-            "required_device": "Home Battery"
+          "images": [
+            {
+              "url": "https://logo.com",
+              "size_type": "sm"
+            }
+          ]
+        },
+        "short_desc": "National solar provider",
+        "fulfillments": [
+          {
+            "id": "617",
+            "type": "SITE_VISIT",
+            "rateable": true
           },
-          "incentive_details": {
-            "type": "Performance-Based Incentive"
+          {
+            "id": "617",
+            "type": "SITE_VISIT",
+            "rateable": true
+          }
+        ],
+        "locations": [
+          {
+            "id": "30",
+            "gps": "37.7890,-122.4014",
+            "address": "595 Market St, SF",
+            "city": {
+              "name": "San Francisco"
+            },
+            "country": {
+              "name": "United States"
+            },
+            "state": {
+              "name": "CA"
+            },
+            "area_code": "94105"
+          }
+        ],
+        "rateable": true
+      },
+      "items": [
+        {
+          "id": "467",
+          "descriptor": {
+            "name": "sp-resi-002",
+            "code": "sp-resi-002",
+            "short_desc": "3kW solar system with smart inverter and EMI options",
+            "long_desc": "A residential 3kW solar installation with high-efficiency panels and a smart inverter for energy optimization. Includes support for EMI-based payment and installation by certified vendors",
+            "images": [
+              {
+                "url": "https://logo.com",
+                "size_type": "sm"
+              }
+            ]
+          },
+          "rating": "null",
+          "rateable": true,
+          "price": {
+            "value": "8000",
+            "currency": "USD"
+          },
+          "quantity": {
+            "available": {
+              "count": 2,
+              "measure": {
+                "value": "2"
+              }
+            },
+            "selected": {
+              "count": 1
+            }
+          },
+          "category_ids": [
+            "43"
+          ],
+          "fulfillment_ids": [
+            "617"
+          ],
+          "location_ids": [
+            "30"
+          ],
+          "tags": [
+            {
+              "descriptor": {
+                "description": "system_specification",
+                "code": "system_specification"
+              },
+              "list": [
+                {
+                  "value": "3KW",
+                  "descriptor": {
+                    "code": "system_capacity",
+                    "name": "system capacity"
+                  },
+                  "display": true
+                }
+              ]
+            },
+            {
+              "descriptor": {
+                "description": "installation_context",
+                "code": "installation_context"
+              },
+              "list": [
+                {
+                  "value": "Residential",
+                  "descriptor": {
+                    "code": "property_type",
+                    "name": "property type"
+                  },
+                  "display": true
+                }
+              ]
+            },
+            {
+              "descriptor": {
+                "description": "financial_details",
+                "code": "financial_details"
+              },
+              "list": [
+                {
+                  "value": "TRUE",
+                  "descriptor": {
+                    "code": "financial_assistance",
+                    "name": "financial assistance"
+                  },
+                  "display": true
+                }
+              ]
+            }
+          ],
+          "xinput": {
+            "form": {
+              "mime_type": "text/html"
+            }
           }
         }
+      ],
+      "quote": {
+        "price": {
+          "value": "8000",
+          "currency": "USD"
+        },
+        "breakup": [
+          {
+            "title": "BASE PRICE",
+            "price": {
+              "currency": "USD",
+              "value": "150"
+            },
+            "item": {
+              "id": "467"
+            }
+          },
+          {
+            "title": "TAX",
+            "price": {
+              "currency": "USD",
+              "value": "25"
+            },
+            "item": {
+              "id": "467"
+            }
+          }
+        ]
+      },
+      "fulfillments": [
+        {
+          "id": "617",
+          "type": "SITE_VISIT",
+          "rateable": true
+        }
+      ]
+    },
+    "products": [
+      {
+        "id": "33",
+        "provider_id": "27",
+        "name": "5KW Solar Panel System \u2013 Polycrystalline & Mono PERC",
+        "description": "5KW Solar Panel System \u2013 Polycrystalline & Mono PERC",
+        "price": "187500",
+        "currency": "INR",
+        "image": "https://bluebirdsolar.com/cdn/shop/files/Mono-PERC-400W--x-13_2174e022-faa1-482c-b9b8-b3eba33ddcc7.jpg?v=1688548621"
       },
       {
-        "id": "459",
-        "provider_id": "323",
-        "provider_name": "Pacific Gas and Electric Company (PG&E)",
-        "provider_desc": "Demand response and smart energy programs",
-        "name": "Time-of-Use Optimization Plan",
-        "description": "Save money by shifting usage to off-peak hours",
-        "long_description": "Participants reduce energy bills by aligning usage with low-cost off-peak time windows. Automated energy usage analytics help optimize schedules.",
-        "image": "https://static.vecteezy.com/system/resources/previews/004/820/773/non_2x/upside-down-arrow-with-electrical-plug-and-lightning-free-vector.jpg",
-        "price": "0",
+        "id": "284",
+        "provider_id": "106",
+        "name": "Voltronix Lithium Ion Battery Kit for Energy Storage, Solar and Battery up",
+        "description": "Voltronix Lithium Ion Battery Kit for Energy Storage, Solar and Battery up",
+        "price": "25000",
         "currency": "USD",
-        "tags": {
-          "program_details": {
-            "program_type": "Time-of-Use Plan"
-          },
-          "device_type": {
-            "required_device": "None"
-          },
-          "incentive_details": {
-            "type": "Tariff Discount"
-          }
-        }
-      },
-      {
-        "id": "460",
-        "provider_id": "323",
-        "provider_name": "Pacific Gas and Electric Company (PG&E)",
-        "provider_desc": "Demand response and smart energy programs",
-        "name": "EV Smart Charging Response",
-        "description": "Delay or pause EV charging when the grid is strained",
-        "long_description": "By allowing PG&E to pause or slow EV charging during high grid load periods, users earn rebates and contribute to cleaner grid operations.",
-        "image": "https://static.vecteezy.com/system/resources/previews/004/820/773/non_2x/upside-down-arrow-with-electrical-plug-and-lightning-free-vector.jpg",
-        "price": "0",
-        "currency": "USD",
-        "tags": {
-          "program_details": {
-            "program_type": "EV Smart Charging"
-          },
-          "device_type": {
-            "required_device": "Smart EV Charger"
-          },
-          "incentive_details": {
-            "type": "Rebate + Bill Credit"
-          }
-        }
+        "image": "https://m.media-amazon.com/images/I/81wzNbAfgzL._AC_SX679_.jpg"
       }
     ],
     "selected_provider": "323",
