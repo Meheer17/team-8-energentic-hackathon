@@ -52,9 +52,45 @@ python main.py
 
 ## 📸 Screenshots / Visuals
 
-[Add your screenshots and visuals here]
+<div align="center">
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/1f.jpeg" width="400" alt="SunShare Screenshot 1" />
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/2f.jpeg" width="400" alt="SunShare Screenshot 2" />
+</div>
 
-## 📚 Challenges & Learnings
+<div align="center">
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/3f.jpeg" width="400" alt="SunShare Screenshot 3" />
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/4f.jpeg" width="400" alt="SunShare Screenshot 4" />
+</div>
+
+<div align="center">
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/5f.jpeg" width="400" alt="SunShare Screenshot 5" />
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/6f.jpeg" width="400" alt="SunShare Screenshot 6" />
+</div>
+
+<div align="center">
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/7f.jpeg" width="400" alt="SunShare Screenshot 7" />
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/8f.jpeg" width="400" alt="SunShare Screenshot 8" />
+</div>
+
+<div align="center">
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/9f.jpeg" width="400" alt="SunShare Screenshot 9" />
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/10f.jpeg" width="400" alt="SunShare Screenshot 10" />
+</div>
+
+<div align="center">
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/11f.jpeg" width="400" alt="SunShare Screenshot 11" />
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/12f.jpeg" width="400" alt="SunShare Screenshot 12" />
+</div>
+
+<div align="center">
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/13f.jpeg" width="400" alt="SunShare Screenshot 13" />
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/14f.jpeg" width="400" alt="SunShare Screenshot 14" />
+</div>
+
+<div align="center">
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/15f.jpeg" width="400" alt="SunShare Screenshot 15" />
+    <img src="https://github.com/Meheer17/team-8-energentic-hackathon/blob/6452217dafdae90aaf7d75ec69b9a363660abed5/screenshots/16f.jpeg" width="400" alt="SunShare Screenshot 16" />
+</div>
 
 ## 📚 Challenges & Learnings
 
