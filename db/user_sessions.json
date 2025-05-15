@@ -1,9 +1,15 @@
 {
   "945846353": {
     "state": "solar_onboarding_options",
+<<<<<<< HEAD
     "last_updated": "2025-05-15T17:16:58.054127",
     "address": "Dhd",
     "electricity_consumption": 37.0,
+=======
+    "last_updated": "2025-05-15T22:38:43.970695",
+    "address": "fdsf",
+    "electricity_consumption": 323.0,
+>>>>>>> 6ec6a00 (updated buy)
     "nfts": [
       {
         "token_id": "nft-9458-grid-1747287572",
@@ -18,8 +24,8 @@
       }
     ],
     "selected_provider": "323",
-    "selected_subsidy": "460",
-    "subsidy_order_id": "3795",
+    "selected_subsidy": "458",
+    "subsidy_order_id": "3797",
     "rooftop_analysis": "Yes, the roof appears suitable for solar panel installation.\n\nConcerns/Limitations:  The available surface area may be limited by the dormer windows.  Roof orientation and angle need to be assessed for optimal solar gain.  Shading from nearby trees (not fully visible) should be investigated.  The roof's condition needs verification to ensure it can support the added weight.\n",
     "selected_installer": "330",
     "selected_service": "467",
@@ -206,6 +212,7 @@
         }
       ]
     },
+<<<<<<< HEAD
     "products": [
       {
         "id": "33",
@@ -477,6 +484,14 @@
         "off_peak_buying": true
       },
       "estimated_monthly_benefit_usd": 67.5
+=======
+    "products": [],
+    "selected_product_provider": "27",
+    "selected_product": "33",
+    "product_init": {
+      "provider_id": "27",
+      "product_id": "33"
+>>>>>>> 6ec6a00 (updated buy)
     }
   }
 }

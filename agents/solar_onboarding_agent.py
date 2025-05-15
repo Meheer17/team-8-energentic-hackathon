@@ -103,10 +103,10 @@ class SolarOnboardingAgent:
         """
         try:
             # Call Beckn API to search for solar products
-            response = self.beckn_client.search_solar_products(query="solar")
+            response = self.beckn_client.search_solar_products()
             # Extract products from response
             products = []
-            
+            print(response)
             if "responses" in response:
                 for resp in response.get("responses", []):
                     if "message" in resp and "catalog" in resp["message"]:
@@ -115,6 +115,7 @@ class SolarOnboardingAgent:
                         for provider in providers:
                             provider_id = provider.get("id")
                             provider_name = provider.get("descriptor", {}).get("name", "Unknown")
+                            print(provider)
                             for item in provider.get("items", []):
                                 product = {
                                     "id": item.get("id"),
@@ -139,6 +140,125 @@ class SolarOnboardingAgent:
         except Exception as e:
             logger.error(f"Error searching solar products for user {user_id}: {str(e)}")
             return []
+    
+    def select_solar_product(self, user_id: str, provider_id: str, product_id: str) -> Dict[str, Any]:
+        """
+        Select a specific solar panel product.
+        
+        Args:
+            user_id: The user identifier
+            provider_id: The provider ID
+            product_id: The product ID
+            
+        Returns:
+            Selected product details
+        """
+        try:
+            # Call Beckn API to select the product
+            response = self.beckn_client.select_item(provider_id, product_id, domain="deg:retail")
+            
+            # Extract selection details
+            selection = {}
+            if "responses" in response:
+                for resp in response.get("responses", []):
+                    if "message" in resp and "order" in resp["message"]:
+                        order = resp["message"]["order"]
+                        selection = {
+                            "provider": order.get("provider", {}),
+                            "item": order.get("items", [{}])[0] if order.get("items") else {},
+                            "quote": order.get("quote", {})
+                        }
+            
+            # Store in state
+            if user_id in self.state:
+                self.state[user_id]['product_selection'] = selection
+            else:
+                self.state[user_id] = {'product_selection': selection}
+                
+            return selection
+            
+        except Exception as e:
+            logger.error(f"Error selecting solar product for user {user_id}: {str(e)}")
+            return {}
+    
+    def init_solar_product_order(self, user_id: str, provider_id: str, product_id: str) -> Dict[str, Any]:
+        """
+        Initialize an order for a solar panel product.
+        
+        Args:
+            user_id: The user identifier
+            provider_id: The provider ID
+            product_id: The product ID
+            
+        Returns:
+            Order initialization details
+        """
+        try:
+            # Call Beckn API to initialize the order
+            response = self.beckn_client.init_order(provider_id, product_id, domain="deg:retail")
+            
+            # Extract order details
+            order_init = {}
+            
+            if "responses" in response:
+                for resp in response.get("responses", []):
+                    if "message" in resp and "order" in resp["message"]:
+                        order_init = resp["message"]["order"]
+            
+            # Store in state
+            if user_id in self.state:
+                self.state[user_id]['product_order_init'] = order_init
+            else:
+                self.state[user_id] = {'product_order_init': order_init}
+                
+            return order_init
+            
+        except Exception as e:
+            logger.error(f"Error initializing solar product order for user {user_id}: {str(e)}")
+            return {}
+    
+    def confirm_solar_product_order(self, user_id: str, provider_id: str, product_id: str, customer_info: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Confirm an order for a solar panel product.
+        
+        Args:
+            user_id: The user identifier
+            provider_id: The provider ID
+            product_id: The product ID
+            customer_info: Customer information including name, contact details, and delivery address
+            
+        Returns:
+            Order confirmation details
+        """
+        try:
+            # Call Beckn API to confirm the order
+            response = self.beckn_client.confirm_order(
+                provider_id, 
+                product_id, 
+                "618",  # Default fulfillment ID for retail products
+                customer_info, 
+                domain="deg:retail"
+            )
+            
+            # Extract order details
+            order_confirmation = {}
+            
+            if "responses" in response:
+                for resp in response.get("responses", []):
+                    if "message" in resp and "order" in resp["message"]:
+                        order_confirmation = resp["message"]["order"]
+            
+            # Store in state
+            if user_id in self.state:
+                self.state[user_id]['product_order_confirmation'] = order_confirmation
+            else:
+                self.state[user_id] = {'product_order_confirmation': order_confirmation}
+                
+            return order_confirmation
+            
+        except Exception as e:
+            logger.error(f"Error confirming solar product order for user {user_id}: {str(e)}")
+            return {}
     
     def select_service(self, user_id: str, provider_id: str, service_id: str) -> Dict[str, Any]:
         """

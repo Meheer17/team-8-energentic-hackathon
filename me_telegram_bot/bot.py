@@ -19,7 +19,8 @@ from .handlers import (
     handle_solar_onboarding_callback,
     handle_photo_message,
     handle_energy_services_callback,
-    handle_unknown_callback
+    handle_unknown_callback,
+    handle_solar_retail_callback
 )
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ def setup_telegram_bot(token):
     # Register callback query handlers
     application.add_handler(CallbackQueryHandler(handle_solar_onboarding_callback, pattern="^solar_onboarding:"))
     application.add_handler(CallbackQueryHandler(handle_energy_services_callback, pattern="^energy_services:"))
+    application.add_handler(CallbackQueryHandler(handle_solar_retail_callback, pattern="^solar_retail:"))
     application.add_handler(CallbackQueryHandler(handle_unknown_callback))
     
     # Log errors
