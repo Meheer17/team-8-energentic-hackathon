@@ -13,13 +13,6 @@ SUNSHARE is an intelligent platform that simplifies the journey of solar energy 
 - Earn rewards through NFTs
 - Share excess energy with neighbors
 
-## 👥 Team Members
-
-- [Your Name] - Project Lead & Developer
-- [Team Member 2] - Backend Developer
-- [Team Member 3] - Frontend Developer
-- [Team Member 4] - UI/UX Designer
-
 ## 🧰 Tech Stack
 
 ### Backend
@@ -27,7 +20,6 @@ SUNSHARE is an intelligent platform that simplifies the journey of solar energy 
 - python-telegram-bot
 - LangChain
 - Beckn Protocol API
-- PostgreSQL
 
 ### Frontend
 - Telegram Bot Interface
@@ -44,8 +36,8 @@ SUNSHARE is an intelligent platform that simplifies the journey of solar energy 
 
 1. Clone the repository:
 ```bash
-git clone [repository-url]
-cd [repository-name]
+git clone [[repository-url]](https://github.com/Meheer17/team-8-energentic-hackathon)
+cd team-8-energentic-hackathon
 ```
 
 2. Install dependencies:
@@ -55,16 +47,32 @@ pip install -r requirements.txt
 
 3. Set up environment variables:
 ```bash
-cp .env.example .env
-# Edit .env with your configuration
+touch config/secrets.env
+# Add the Following to the env
+TELEGRAM_BOT_TOKEN=
+
+# Beckn API Configuration - Using the real sandbox API
+BECKN_BASE_URL=https://sandbox-api.beckn-energy.com
+BECKN_BAP_ID=bap-ps-network-deg-team8.becknprotocol.io
+BECKN_BAP_URI=https://bap-ps-network-deg-team8.becknprotocol.io
+BECKN_BPP_ID=bpp-ps-network-deg-team8.becknprotocol.io
+BECKN_BPP_URI=https://bpp-ps-network-deg-team8.becknprotocol.io
+BECKN_MOCK_MODE=false
+
+# Google Cloud / Vertex AI Configuration
+GOOGLE_APPLICATION_CREDENTIALS={}
+
+VERTEX_PROJECT_ID= 
+VERTEX_LOCATION=
+VERTEX_MODEL_ID=
+
+# Application Settings
+DEBUG=true
+LOG_LEVEL=INFO
+
 ```
 
-4. Initialize the database:
-```bash
-python scripts/init_db.py
-```
-
-5. Run the bot:
+4. Run the bot:
 ```bash
 python main.py
 ```
@@ -93,7 +101,7 @@ python main.py
    - Managing state across different flows
 
 2. **Energy Trading Logic**
-   - Implementing real-time price calculations
+   - Implementing price calculations
    - Managing grid interactions
    - Handling P2P energy sharing
 
@@ -127,8 +135,6 @@ python main.py
 
 ### APIs & Services
 - [Beckn Network](https://becknprotocol.io)
-- [Solar Panel Analysis API](https://api.example.com/solar)
-- [Energy Trading API](https://api.example.com/trading)
 
 ### Community
 - [Beckn Protocol Community](https://community.becknprotocol.io)
