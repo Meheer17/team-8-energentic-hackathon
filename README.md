@@ -1,17 +1,11 @@
-# 🌟 SUNSHARE - Solar Energy Management Platform
+# DEG Energy Agentic Platform
 
-A comprehensive Telegram bot that helps users manage their solar energy systems, find subsidies, connect with installers, and participate in the energy marketplace.
+A Telegram-based intelligent agent platform for solar onboarding and energy services, built for the DEG Hackathon 2025.
 
-## 📌 Project Description
+## Overview
 
-SUNSHARE is an intelligent platform that simplifies the journey of solar energy adoption and management. It helps users:
-- Find and apply for solar subsidies
-- Connect with certified solar installers
-- Purchase solar panels and equipment
-- Calculate ROI and energy savings
-- Participate in energy trading
-- Earn rewards through NFTs
-- Share excess energy with neighbors
+This platform provides an AI-powered assistant that helps users with:
+
 
 ## 🧰 Tech Stack
 
@@ -21,27 +15,38 @@ SUNSHARE is an intelligent platform that simplifies the journey of solar energy 
 - LangChain
 - Beckn Protocol API
 
-### Frontend
-- Telegram Bot Interface
-- Markdown Formatting
-- Inline Keyboards
+Problem Statement
 
-### APIs & Services
-- Beckn Protocol for Solar Retail
-- Solar Panel Analysis API
-- Energy Trading API
-- NFT Marketplace Integration
+1. **Solar Onboarding (Use Case 1)**: Guides users through the process of getting solar panels installed on their rooftops, including subsidy discovery, installer matching, and ROI calculation.
 
-## 🚀 Setup Instructions
+2. **Energy Services (Use Case 2)**: Helps users with installed solar systems to participate in energy markets, sell excess energy, earn through demand response, and tokenize their energy as NFTs.
+
+## Features
+
+### Solar Onboarding Agent
+- Rooftop image analysis for solar potential
+- Address-based subsidy and incentive discovery
+- Solar installer matching and recommendations
+- ROI calculation and financial projections
+- Simplified paperwork and documentation assistance
+
+### Prosumer Energy Agent
+- Energy production monitoring and visualization
+- Energy trading opportunities discovery
+- Demand response program participation
+- NFT tokenization of energy credits
+- AI-powered automatic energy trading
+
+## Installation
 
 1. Clone the repository:
 ```bash
-git clone [[repository-url]](https://github.com/Meheer17/team-8-energentic-hackathon)
-cd team-8-energentic-hackathon
+git clone https://github.com/yourusername/deg-hackathon-2025.git
+cd deg-hackathon-2025/deg_agentic_platform
 ```
 
 2. Install dependencies:
-```bash
+```
 pip install -r requirements.txt
 ```
 
@@ -74,69 +79,41 @@ LOG_LEVEL=INFO
 
 4. Run the bot:
 ```bash
+cp config/secrets.env.example config/secrets.env
+# Edit the secrets.env file with your credentials
+```
+
+4. Run the application:
+```
 python main.py
 ```
 
-## 🎥 Demo Video Link
+## Usage
+1. Start the Telegram bot by sending `/start`
+2. Choose between "Onboard for Rooftop Solar" or "Use My Installed System"
+3. Follow the interactive prompts and respond to the bot's questions
+4. Upload images, provide location info, and receive personalized recommendations
 
-[Add your demo video link here]
 
-## 📸 Screenshots / Visuals
+## Architecture
 
-### Main Menu
-![Main Menu](screenshots/main_menu.png)
+The platform uses a modular architecture:
+- Telegram Bot: User interface and interaction
+- LangChain: Natural language processing and reasoning
+- Beckn Protocol: Integration with energy ecosystem
+- Google Vertex AI: Image analysis and large language models
 
-### Solar Onboarding
-![Solar Onboarding](screenshots/solar_onboarding.png)
+## API Integrations
 
-### Energy Services
-![Energy Services](screenshots/energy_services.png)
-
-## 📚 Challenges & Learnings
-
-### Technical Challenges
-1. **Beckn Protocol Integration**
-   - Complex API integration with multiple endpoints
-   - Handling asynchronous responses
-   - Managing state across different flows
-
-2. **Energy Trading Logic**
-   - Implementing price calculations
-   - Managing grid interactions
-   - Handling P2P energy sharing
-
-3. **User Experience**
-   - Creating intuitive flows in a text-based interface
-   - Managing complex state transitions
-   - Providing clear feedback and error handling
-
-### Key Learnings
-1. **Beckn Protocol**
-   - Understanding the protocol's architecture
-   - Implementing standardized flows
-   - Handling different response formats
-
-2. **Energy Management**
-   - Solar system sizing and optimization
-   - Grid interaction patterns
-   - Energy trading strategies
-
-3. **Bot Development**
-   - State management in Telegram bots
-   - User session handling
-   - Error recovery and graceful degradation
-
-## 🔗 Useful Resources
-
-### Documentation
-- [Beckn Protocol Documentation](https://docs.becknprotocol.io)
-- [python-telegram-bot Documentation](https://python-telegram-bot.readthedocs.io)
-- [LangChain Documentation](https://python.langchain.com)
+- Beckn Protocol for energy services discovery and transaction
+- Google Cloud Vision API for rooftop image analysis
+- OpenAI's GPT models for natural language understanding
+- Blockchain integration for energy NFTs
 
 ### APIs & Services
 - [Beckn Network](https://becknprotocol.io)
 
-### Community
-- [Beckn Protocol Community](https://community.becknprotocol.io)
-- [Telegram Bot Development](https://t.me/telegrambotdev)
-- [Solar Energy Community](https://community.example.com/solar)
+## Acknowledgment
+- DEG for organizing the hackathon
+- Beckn Protocol for the energy services framework
+- OpenAI and Google for their powerful AI models# Energentic_hackathon
